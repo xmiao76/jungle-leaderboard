@@ -14,9 +14,10 @@ const STATS = [
   { label: 'Weights', value: `${openCount} open · ${closedCount} closed` },
   { label: 'Game', value: 'Dou Shou Qi' },
 ] as const;
+
+// gap-px over a line-coloured backdrop gives hairline dividers between cells.
 ---
 
-<!-- gap-px over a line-coloured backdrop gives hairline dividers between cells. -->
 <dl
   class="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4"
 >

@@ -1,4 +1,5 @@
 ---
+import { BUILD_BUDGET_WORDS } from '../data/models';
 import ContentSection from './ContentSection.astro';
 
 /** The eight pieces, strongest first. Rank is the number used when capturing. */
@@ -63,7 +64,8 @@ const EXCEPTIONS = [
   </ul>
 
   <p>
-    These exceptions interact, which is what makes the game a searching two-hour target. A naive
+    These exceptions interact, which is what makes the game a searching {BUILD_BUDGET_WORDS}-hour
+    target. A naive
     implementation yields something that resembles Jungle and plays legally most of the time; the
     defects concentrate in precisely the positions the exceptions govern. Competition play is what
     forces those positions to occur.

@@ -1,4 +1,5 @@
 ---
+import { BUILD_BUDGET_WORDS } from '../data/models';
 import { formatSnapshotDate } from '../lib/format';
 
 interface Props {
@@ -9,7 +10,6 @@ const { isoDate } = Astro.props;
 ---
 
 <header class="pt-10 sm:pt-14">
-  <!-- Masthead rule: publication name left, issue date right. -->
   <div
     class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-line-strong pb-3 text-[0.66rem] font-semibold tracking-[0.16em] uppercase"
   >
@@ -26,11 +26,11 @@ const { isoDate } = Astro.props;
   </h1>
 
   <p class="mt-6 max-w-3xl font-display text-xl leading-snug text-muted text-balance sm:text-2xl">
-    Six frontier models. Two hours each. One traditional Chinese board game.
+    Six frontier models. One traditional Chinese board game. About {BUILD_BUDGET_WORDS} hours each.
   </p>
 
   <p class="mt-5 max-w-2xl text-sm leading-relaxed text-subtle">
-    Every model got roughly two hours of agentic coding time to build a playable Jungle
+    Every model got roughly {BUILD_BUDGET_WORDS} hours of agentic coding time to build a playable Jungle
     (Dou Shou Qi) program from an empty repository. The finished programs were then played against
     one another — and any program in which a defect surfaced during competition failed.
   </p>

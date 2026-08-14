@@ -1,6 +1,6 @@
 # Jungle Leaderboard
 
-A leaderboard for an agentic-coding benchmark. Each frontier AI model is given roughly two hours of
+A leaderboard for an agentic-coding benchmark. Each frontier AI model is given roughly three hours of
 agentic coding time to build a playable **Jungle** — Chinese *Dou Shou Qi* (斗兽棋), "the game of
 fighting animals" — program from an empty repository. The finished programs are then played against
 one another.
@@ -32,7 +32,7 @@ forces those positions to occur.
 ## Methodology
 
 **Build phase.** Every model received the same task — implement a complete, playable Jungle program
-— and approximately two hours of agentic coding time in which to finish it. Each model worked inside
+— and approximately three hours of agentic coding time in which to finish it. Each model worked inside
 the coding harness and effort setting recorded against it in the results table, so a row describes a
 model-plus-harness configuration rather than a model in isolation.
 
