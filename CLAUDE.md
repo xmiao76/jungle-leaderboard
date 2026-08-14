@@ -63,8 +63,14 @@ Tailwind v4 with tokens declared in `src/styles/global.css`: CSS custom properti
 
 ## Deployment
 
-Static build on Cloudflare Pages via the GitHub integration; pushes to `main` deploy. Preset Astro,
-build command `npm run build`, output `dist`, Node from `.nvmrc`.
+`npm run deploy` runs the tests, then a type-checked build, then `wrangler pages deploy dist` to the
+Cloudflare Pages project `jungle-leaderboard`.
+
+**Pushing to GitHub deploys nothing.** The project is Direct Upload, not Git-connected, and
+Cloudflare fixes that choice at creation time — so never describe a push as publishing, and do not
+offer "connect the repo to Pages" as a fix for a stale site; that would require recreating the
+project. Re-run `npm run deploy` instead. Deploying needs a Cloudflare OAuth session, which
+`npx wrangler whoami` will confirm.
 
 Changing the domain means updating three places: `site` in `astro.config.mjs`, `SITE.url` in
 `src/data/site.ts`, and the `Sitemap:` line in `public/robots.txt`. Canonical tags, Open Graph URLs
