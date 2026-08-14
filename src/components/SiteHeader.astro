@@ -8,23 +8,30 @@ interface Props {
 const { isoDate } = Astro.props;
 ---
 
-<header class="pt-14 pb-10 sm:pt-20 sm:pb-12">
-  <p class="text-[0.7rem] font-semibold tracking-[0.16em] text-accent uppercase">
-    Agentic coding benchmark
-  </p>
+<header class="pt-10 sm:pt-14">
+  <!-- Masthead rule: publication name left, issue date right. -->
+  <div
+    class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-line-strong pb-3 text-[0.66rem] font-semibold tracking-[0.16em] uppercase"
+  >
+    <p class="text-accent">Agentic coding benchmark</p>
+    <p class="text-subtle">
+      Standings · <time datetime={isoDate}>{formatSnapshotDate(isoDate)}</time>
+    </p>
+  </div>
 
-  <h1 class="mt-3 text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+  <h1
+    class="mt-8 font-display text-5xl leading-[1.03] font-semibold tracking-tight text-balance sm:mt-10 sm:text-6xl lg:text-7xl"
+  >
     Jungle Leaderboard
   </h1>
 
-  <p class="mt-5 max-w-3xl text-base leading-relaxed text-muted sm:text-lg">
-    Frontier AI models each get roughly two hours of agentic coding time to build a playable
-    <strong class="font-semibold text-fg">Jungle</strong> (Dou Shou Qi) program from an empty
-    repository. The finished programs are then played against one another, and any program in which
-    a defect surfaces during competition fails.
+  <p class="mt-6 max-w-3xl font-display text-xl leading-snug text-muted text-balance sm:text-2xl">
+    Six frontier models. Two hours each. One traditional Chinese board game.
   </p>
 
-  <p class="mt-5 text-sm text-subtle">
-    Standings as of <time datetime={isoDate} class="text-muted">{formatSnapshotDate(isoDate)}</time>
+  <p class="mt-5 max-w-2xl text-sm leading-relaxed text-subtle">
+    Every model got roughly two hours of agentic coding time to build a playable Jungle
+    (Dou Shou Qi) program from an empty repository. The finished programs were then played against
+    one another — and any program in which a defect surfaced during competition failed.
   </p>
 </header>

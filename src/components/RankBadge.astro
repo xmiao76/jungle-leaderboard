@@ -22,7 +22,7 @@ const badgeStyle = medal ? MEDAL_STYLES[medal] : 'border-line bg-inset text-mute
 <div class="flex items-center gap-2">
   <span
     class:list={[
-      'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-base font-semibold',
+      'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-display text-lg font-semibold',
       badgeStyle,
     ]}
   >
@@ -30,7 +30,7 @@ const badgeStyle = medal ? MEDAL_STYLES[medal] : 'border-line bg-inset text-mute
   </span>
   {
     isTied && (
-      <span class="text-[0.65rem] font-semibold tracking-[0.08em] text-subtle uppercase"> tied </span>
+      <span class="text-[0.62rem] font-semibold tracking-[0.09em] text-subtle uppercase">tied</span>
     )
   }
 </div>

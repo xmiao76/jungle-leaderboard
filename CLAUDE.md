@@ -43,23 +43,46 @@ A single static page whose entire content derives from one data module. The flow
 - Logic lives in `src/lib/` and is unit-tested; `.astro` components have no unit tests and are
   verified through build output instead.
 
+## Design direction
+
+"Tournament almanac": warm paper, one jade accent, gold/silver/bronze reserved for the podium.
+Fraunces (display, self-hosted, optical-size axis) over IBM Plex Sans (text). **Light is the default
+theme**; `prefers-color-scheme: dark` is a warm-neutral inversion, not a cool slate.
+
+The palette is deliberately four things — paper, ink, jade, three metals. Adding a fifth hue for a
+new category is the fastest way to make this page look generic; differentiate with weight, rule, or
+dot fill instead (see `AccessBadge.astro`, which uses a filled vs hollow dot rather than two colours).
+
 ## Styling gotchas
 
-Tailwind v4 with tokens declared in `src/styles/global.css`: CSS custom properties on `:root`, a
-`prefers-color-scheme: light` override, and `@theme inline` to expose them as utilities.
+Tokens live in `src/styles/global.css` as CSS custom properties on `:root`, with a
+`prefers-color-scheme: dark` override, exposed as utilities through `@theme inline`.
 
 - **Opacity modifiers silently break on these tokens.** `bg-gold/12` compiles to
   `background-color: var(--c-gold)` — full opacity, modifier dropped — because `@theme inline` gives
   Tailwind an unresolvable `var()` to mix. Use the alpha-baked tokens instead: `bg-gold-soft`,
-  `border-gold-line`, and the matching `silver`/`bronze`/`open`/`closed` variants. Never add a `/NN`
+  `border-gold-line`, and the matching `silver`/`bronze`/`accent` variants. Never add a `/NN`
   modifier to a token colour; add a new token carrying its own alpha.
+- **Contrast is measured, not eyeballed.** Every text/background pair clears WCAG AA in both themes;
+  the tightest is `subtle` on `inset` (light) at 5.10:1. Two separate rounds of this redesign
+  produced real failures that looked fine in the values — recompute before lightening `subtle`,
+  `muted`, or any medal token.
 - **Dynamic class names must appear literally in source.** Component styles use `as const` lookup
-  maps of complete class strings (see `RankBadge.astro`, `AccessBadge.astro`) so Tailwind's scanner
-  finds them. Never build a token class by string concatenation.
+  maps of complete class strings (see `RankBadge.astro`, `Podium.astro`) so Tailwind's scanner finds
+  them. Never build a token class by string concatenation.
 - **The mobile table depends on `data-label`.** Under 48rem, `.lb-table` collapses rows to cards and
   renders each column's heading from `td[data-label]` via `::before`. Any new `<td>` in
   `ModelRow.astro` needs a `data-label` matching its `<th>`, or it loses its label on phones. Add
   `data-span` for a cell that should span the full card width.
+- **`--rule` drives the row accent.** `ModelRow.astro` sets it inline per row (medal colour for the
+  top three, `--c-accent-line` otherwise); CSS reads it for both the desktop first-cell left border
+  and the mobile card's left edge. One variable, two layouts.
+- **The podium's visual order is not its DOM order.** `Podium.astro` emits 1·2·3 so screen readers
+  and Tab order follow the ranking; `.podium` reorders to 2·1·3 visually at 48rem and up. Never
+  "fix" the DOM order to match what you see on screen.
+- **Reveal animations must never gate visibility.** `.reveal-fade` / `.reveal-rise` stagger via an
+  inline `--i`, and `prefers-reduced-motion` resets them to `opacity: 1`. Any new entry animation
+  needs that same reduced-motion reset, or content disappears for those users.
 
 ## Deployment
 

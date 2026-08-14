@@ -16,14 +16,17 @@ const STATS = [
 ] as const;
 ---
 
-<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+<!-- gap-px over a line-coloured backdrop gives hairline dividers between cells. -->
+<dl
+  class="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4"
+>
   {
     STATS.map((stat) => (
-      <div class="rounded-xl border border-line bg-raised px-4 py-3.5">
-        <dt class="text-[0.65rem] font-semibold tracking-[0.09em] text-subtle uppercase">
+      <div class="bg-raised px-4 py-4">
+        <dt class="text-[0.62rem] font-semibold tracking-[0.1em] text-subtle uppercase">
           {stat.label}
         </dt>
-        <dd class="mt-1.5 text-lg font-semibold text-fg">{stat.value}</dd>
+        <dd class="mt-1.5 font-display text-lg leading-tight font-semibold text-fg">{stat.value}</dd>
       </div>
     ))
   }

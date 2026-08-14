@@ -1,8 +1,19 @@
 ---
 import ContentSection from './ContentSection.astro';
 
+/** The eight pieces, strongest first. Rank is the number used when capturing. */
+const PIECES = [
+  { rank: 8, name: 'Elephant', glyph: '🐘' },
+  { rank: 7, name: 'Lion', glyph: '🦁' },
+  { rank: 6, name: 'Tiger', glyph: '🐯' },
+  { rank: 5, name: 'Leopard', glyph: '🐆' },
+  { rank: 4, name: 'Wolf', glyph: '🐺' },
+  { rank: 3, name: 'Dog', glyph: '🐕' },
+  { rank: 2, name: 'Cat', glyph: '🐈' },
+  { rank: 1, name: 'Rat', glyph: '🐁' },
+] as const;
+
 const EXCEPTIONS = [
-  'The Rat captures the Elephant, while the Elephant cannot touch the Rat.',
   'Only the Rat may enter the two river regions, and it cannot capture while in the water.',
   'The Lion and the Tiger leap a river in a straight line — unless a rat of either colour sits anywhere along the path.',
   "A piece standing in one of the opponent's traps loses its rank entirely and can be captured by anything.",
@@ -12,15 +23,40 @@ const EXCEPTIONS = [
 <ContentSection id="the-game" title="The game, and why it is a useful test">
   <p>
     Jungle — <span lang="zh-Hans">斗兽棋</span>, <em>Dou Shou Qi</em>, "the game of fighting animals"
-    — is a two-player board game played on a 7×9 grid. Each side commands eight animals ranked
-    Elephant, Lion, Tiger, Leopard, Wolf, Dog, Cat and Rat. A player wins by moving any piece into
-    the opponent's den, or by capturing every opposing piece.
+    — is a two-player board game played on a 7×9 grid. Each side commands eight animals. A player
+    wins by moving any piece into the opponent's den, or by capturing every opposing piece.
   </p>
 
-  <p>
-    A piece may ordinarily capture an enemy of equal or lower rank. The demanding part is the
-    exceptions:
+  <p>A piece may ordinarily capture an enemy of equal or lower rank:</p>
+
+  <ol class="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+    {
+      PIECES.map((piece, index) => (
+        <li class="flex items-center gap-1.5">
+          <span class="flex w-[4.6rem] flex-col items-center rounded-xl border border-line bg-raised px-2 py-2.5">
+            <span class="text-2xl leading-none" aria-hidden="true">
+              {piece.glyph}
+            </span>
+            <span class="mt-1.5 text-[0.7rem] leading-none font-semibold text-fg">{piece.name}</span>
+            <span class="tabular mt-1 text-[0.62rem] leading-none text-subtle">rank {piece.rank}</span>
+          </span>
+          {index < PIECES.length - 1 && (
+            <span class="text-base text-subtle" aria-hidden="true">
+              ›
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+
+  <p class="rounded-xl border border-accent-line bg-accent-soft px-4 py-3.5 text-fg">
+    <span class="mr-1.5 text-lg" aria-hidden="true">🐁</span>
+    Except at the very ends of that ladder: <strong class="font-semibold">the Rat captures the
+    Elephant</strong>, while the Elephant can never touch the Rat. The ranking is a loop, not a line.
   </p>
+
+  <p>Three more exceptions govern the board itself:</p>
 
   <ul class="ml-5 list-disc space-y-2">
     {EXCEPTIONS.map((rule) => <li>{rule}</li>)}

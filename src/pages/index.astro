@@ -3,6 +3,7 @@ import ContentSection from '../components/ContentSection.astro';
 import GameRules from '../components/GameRules.astro';
 import LeaderboardTable from '../components/LeaderboardTable.astro';
 import Methodology from '../components/Methodology.astro';
+import Podium from '../components/Podium.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import StatsBar from '../components/StatsBar.astro';
@@ -46,9 +47,9 @@ const structuredData = JSON.stringify({
       budgetHours={BUILD_BUDGET_HOURS}
     />
 
-    <div class="mt-8 sm:mt-10">
-      <LeaderboardTable entries={ranked} showRecord={stats.hasRecords} />
-    </div>
+    <Podium entries={ranked} />
+
+    <LeaderboardTable entries={ranked} showRecord={stats.hasRecords} />
 
     <Methodology isoDate={SNAPSHOT_DATE} budgetHours={BUILD_BUDGET_HOURS} />
 
