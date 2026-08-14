@@ -130,20 +130,25 @@ change is needed.
 
 ## Deployment
 
-The site is a static build deployed to Cloudflare Pages via the GitHub integration; every push to
-`main` triggers a deploy.
+Live at <https://jungle-leaderboard.pages.dev>, hosted on Cloudflare Pages as a **Direct Upload**
+project — the same arrangement as the six game builds it links to. Pushing to GitHub does not deploy;
+publishing is an explicit command:
 
-| Setting | Value |
-|---------|-------|
-| Framework preset | Astro |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Node version | from `.nvmrc` (24) |
-| Project name | `jungle-leaderboard` |
+```bash
+npm run deploy
+```
+
+That runs the test suite and a type-checked build before uploading, so a malformed data edit cannot
+reach production. It needs a Cloudflare session — run `npx wrangler login` once if
+`npx wrangler whoami` reports you are not logged in.
+
+A Direct Upload project cannot later be switched to Git integration; Cloudflare fixes that choice
+when the project is created. Automatic deploys on push would require either a new project connected
+to this repository or a CI workflow invoking the same `wrangler pages deploy`.
 
 If the deployment domain changes, update `site` in `astro.config.mjs`, `SITE.url` in
 `src/data/site.ts`, and the sitemap URL in `public/robots.txt` — canonical tags, Open Graph URLs and
-the sitemap are all derived from those.
+the generated sitemap all derive from those.
 
 ---
 
