@@ -1,0 +1,44 @@
+---
+import type { RankedEntry } from '../lib/ranking';
+import ModelRow from './ModelRow.astro';
+
+interface Props {
+  entries: readonly RankedEntry[];
+  showRecord: boolean;
+}
+
+const { entries, showRecord } = Astro.props;
+
+const HEADINGS = ['Rank', 'Model', 'Access', 'Coding harness', 'Effort'] as const;
+const HEAD_CELL = 'px-4 py-3 font-semibold';
+---
+
+<section id="leaderboard" aria-labelledby="leaderboard-heading" class="scroll-mt-8">
+  <h2 id="leaderboard-heading" class="sr-only">Leaderboard</h2>
+
+  <div class="md:overflow-x-auto md:rounded-2xl md:border md:border-line md:bg-raised">
+    <table class="lb-table w-full caption-bottom border-collapse text-left text-sm">
+      <caption class="px-1 pt-4 text-xs leading-relaxed text-subtle md:px-4 md:pb-4">
+        Standard competition ranking: two models share fifth place, so no sixth place is awarded.
+        <span class="whitespace-nowrap">Access</span> indicates whether the model's weights are publicly
+        available. Every link opens in a new tab.
+      </caption>
+
+      <thead>
+        <tr class="border-b border-line-strong bg-inset text-[0.7rem] tracking-[0.08em] text-subtle uppercase">
+          {HEADINGS.map((heading) => (
+            <th scope="col" class={HEAD_CELL}>{heading}</th>
+          ))}
+          {showRecord && (
+            <th scope="col" class={HEAD_CELL}>Record</th>
+          )}
+          <th scope="col" class={HEAD_CELL}>Artifacts</th>
+        </tr>
+      </thead>
+
+      <tbody class="md:divide-y md:divide-line">
+        {entries.map((entry) => <ModelRow entry={entry} showRecord={showRecord} />)}
+      </tbody>
+    </table>
+  </div>
+</section>

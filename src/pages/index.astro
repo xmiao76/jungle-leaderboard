@@ -1,0 +1,82 @@
+---
+import ContentSection from '../components/ContentSection.astro';
+import GameRules from '../components/GameRules.astro';
+import LeaderboardTable from '../components/LeaderboardTable.astro';
+import Methodology from '../components/Methodology.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import StatsBar from '../components/StatsBar.astro';
+import { BUILD_BUDGET_HOURS, MODELS, SNAPSHOT_DATE } from '../data/models';
+import { SITE } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { buildLeaderboard, validateEntries } from '../lib/ranking';
+import { summarize } from '../lib/summary';
+
+// Fails the build rather than shipping a page with bad data or a broken link.
+validateEntries(MODELS);
+
+const ranked = buildLeaderboard(MODELS);
+const stats = summarize(MODELS);
+
+const structuredData = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: SITE.name,
+  description: SITE.description,
+  url: SITE.url,
+  numberOfItems: ranked.length,
+  itemListOrder: 'https://schema.org/ItemListOrderAscending',
+  itemListElement: ranked.map((entry, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: `${entry.model} (${entry.provider})`,
+    url: entry.playUrl,
+  })),
+});
+---
+
+<BaseLayout title={SITE.title} description={SITE.description} structuredData={structuredData}>
+  <div class="mx-auto w-full max-w-6xl px-5 sm:px-8">
+    <SiteHeader isoDate={SNAPSHOT_DATE} />
+
+    <StatsBar
+      total={stats.total}
+      openCount={stats.openCount}
+      closedCount={stats.closedCount}
+      budgetHours={BUILD_BUDGET_HOURS}
+    />
+
+    <div class="mt-8 sm:mt-10">
+      <LeaderboardTable entries={ranked} showRecord={stats.hasRecords} />
+    </div>
+
+    <Methodology isoDate={SNAPSHOT_DATE} budgetHours={BUILD_BUDGET_HOURS} />
+
+    <GameRules />
+
+    <ContentSection id="reading-the-table" title="Reading the table">
+      <p>
+        Places follow standard competition ranking. Two models finished level and therefore share
+        fifth place; the place immediately below a shared position is skipped, so there is no sixth.
+        Rows marked <span class="font-semibold text-fg">tied</span> are level with one another, not
+        ordered within the tie — the alphabetical order shown inside a tie carries no meaning.
+      </p>
+
+      <p>
+        <span class="font-semibold text-fg">Coding harness</span> names the agent that drove the
+        model, and <span class="font-semibold text-fg">Effort</span> the reasoning tier it ran at.
+        Both materially affect the result, so a row should be read as one configuration of a model
+        rather than as a verdict on the model at every setting.
+      </p>
+
+      <p>
+        Each <span class="font-semibold text-fg">Play</span> link opens that model's deployed build in
+        a new tab, and each <span class="font-semibold text-fg">Source</span> link opens the
+        corresponding GitHub repository. All twelve destinations are third-party pages published from
+        this benchmark's own runs.
+      </p>
+    </ContentSection>
+
+    <SiteFooter isoDate={SNAPSHOT_DATE} />
+  </div>
+</BaseLayout>

@@ -1,0 +1,30 @@
+---
+import { formatSnapshotDate } from '../lib/format';
+
+interface Props {
+  isoDate: string;
+}
+
+const { isoDate } = Astro.props;
+---
+
+<header class="pt-14 pb-10 sm:pt-20 sm:pb-12">
+  <p class="text-[0.7rem] font-semibold tracking-[0.16em] text-accent uppercase">
+    Agentic coding benchmark
+  </p>
+
+  <h1 class="mt-3 text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+    Jungle Leaderboard
+  </h1>
+
+  <p class="mt-5 max-w-3xl text-base leading-relaxed text-muted sm:text-lg">
+    Frontier AI models each get roughly two hours of agentic coding time to build a playable
+    <strong class="font-semibold text-fg">Jungle</strong> (Dou Shou Qi) program from an empty
+    repository. The finished programs are then played against one another, and any program in which
+    a defect surfaces during competition fails.
+  </p>
+
+  <p class="mt-5 text-sm text-subtle">
+    Standings as of <time datetime={isoDate} class="text-muted">{formatSnapshotDate(isoDate)}</time>
+  </p>
+</header>

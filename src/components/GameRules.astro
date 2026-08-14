@@ -1,0 +1,35 @@
+---
+import ContentSection from './ContentSection.astro';
+
+const EXCEPTIONS = [
+  'The Rat captures the Elephant, while the Elephant cannot touch the Rat.',
+  'Only the Rat may enter the two river regions, and it cannot capture while in the water.',
+  'The Lion and the Tiger leap a river in a straight line — unless a rat of either colour sits anywhere along the path.',
+  "A piece standing in one of the opponent's traps loses its rank entirely and can be captured by anything.",
+] as const;
+---
+
+<ContentSection id="the-game" title="The game, and why it is a useful test">
+  <p>
+    Jungle — <span lang="zh-Hans">斗兽棋</span>, <em>Dou Shou Qi</em>, "the game of fighting animals"
+    — is a two-player board game played on a 7×9 grid. Each side commands eight animals ranked
+    Elephant, Lion, Tiger, Leopard, Wolf, Dog, Cat and Rat. A player wins by moving any piece into
+    the opponent's den, or by capturing every opposing piece.
+  </p>
+
+  <p>
+    A piece may ordinarily capture an enemy of equal or lower rank. The demanding part is the
+    exceptions:
+  </p>
+
+  <ul class="ml-5 list-disc space-y-2">
+    {EXCEPTIONS.map((rule) => <li>{rule}</li>)}
+  </ul>
+
+  <p>
+    These exceptions interact, which is what makes the game a searching two-hour target. A naive
+    implementation yields something that resembles Jungle and plays legally most of the time; the
+    defects concentrate in precisely the positions the exceptions govern. Competition play is what
+    forces those positions to occur.
+  </p>
+</ContentSection>

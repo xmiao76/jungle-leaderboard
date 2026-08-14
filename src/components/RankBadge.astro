@@ -1,0 +1,36 @@
+---
+import type { Medal } from '../lib/ranking';
+
+interface Props {
+  place: number;
+  medal: Medal;
+  isTied: boolean;
+}
+
+const { place, medal, isTied } = Astro.props;
+
+// Full class strings kept literal so Tailwind's scanner picks them up.
+const MEDAL_STYLES = {
+  gold: 'border-gold-line bg-gold-soft text-gold',
+  silver: 'border-silver-line bg-silver-soft text-silver',
+  bronze: 'border-bronze-line bg-bronze-soft text-bronze',
+} as const;
+
+const badgeStyle = medal ? MEDAL_STYLES[medal] : 'border-line bg-inset text-muted';
+---
+
+<div class="flex items-center gap-2">
+  <span
+    class:list={[
+      'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-base font-semibold',
+      badgeStyle,
+    ]}
+  >
+    {place}
+  </span>
+  {
+    isTied && (
+      <span class="text-[0.65rem] font-semibold tracking-[0.08em] text-subtle uppercase"> tied </span>
+    )
+  }
+</div>
