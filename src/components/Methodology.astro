@@ -8,13 +8,18 @@ interface Props {
 }
 
 const { isoDate, budgetHours } = Astro.props;
+
+// Whitespace note: keep `{budgetHours} hours` together on one source line. A
+// newline directly after an interpolation is dropped rather than collapsed to a
+// space, which silently renders "3hours". The same applies to an HTML comment
+// placed mid-sentence — hence this note living in the frontmatter.
 ---
 
 <ContentSection id="methodology" title="Methodology">
   <p>
     <strong class="font-semibold text-fg">Build phase.</strong> Every model received the same task —
-    implement a complete, playable Jungle (Dou Shou Qi) program — and approximately {budgetHours}
-    hours of agentic coding time in which to finish it. Each model worked inside the coding harness
+    implement a complete, playable Jungle (Dou Shou Qi) program — and approximately {budgetHours} hours
+    of agentic coding time in which to finish it. Each model worked inside the coding harness
     and effort setting recorded against it in the table above, so a row describes a
     model-plus-harness configuration rather than a model in isolation.
   </p>

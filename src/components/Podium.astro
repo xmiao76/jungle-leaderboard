@@ -18,15 +18,15 @@ const PLACE_STYLES = {
 } as const;
 
 const styleFor = (place: number) => PLACE_STYLES[place as 1 | 2 | 3] ?? PLACE_STYLES[3];
+
+// The <ol> below emits 1 · 2 · 3 so screen readers and Tab order follow the
+// ranking; `.podium` in global.css reorders it to 2 · 1 · 3 visually at 48rem
+// and up. Never "fix" the DOM order to match what appears on screen.
 ---
 
 <section aria-labelledby="podium-heading" class="mt-10">
   <h2 id="podium-heading" class="sr-only">Top three</h2>
 
-  <!--
-    Visual order is 2 · 1 · 3 (see `.podium` in global.css), but DOM order stays
-    1 · 2 · 3 so screen readers and Tab order follow the actual ranking.
-  -->
   <ol class="podium grid gap-4 md:grid-cols-3">
     {
       podium.map((entry, index) => {

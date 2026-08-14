@@ -40,7 +40,14 @@ export interface ModelEntry {
 export const SNAPSHOT_DATE = '2026-08-14';
 
 /** Approximate agentic coding time each model was given for the build phase. */
-export const BUILD_BUDGET_HOURS = 2;
+export const BUILD_BUDGET_HOURS = 3;
+
+/**
+ * The same budget spelled out, for running prose. Kept next to the numeral so
+ * the two cannot drift — copy in the header, rules and meta description all read
+ * from this rather than hardcoding a word.
+ */
+export const BUILD_BUDGET_WORDS = 'three';
 
 export const MODELS: readonly ModelEntry[] = [
   {
