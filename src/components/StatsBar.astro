@@ -1,0 +1,30 @@
+---
+interface Props {
+  total: number;
+  openCount: number;
+  closedCount: number;
+  budgetHours: number;
+}
+
+const { total, openCount, closedCount, budgetHours } = Astro.props;
+
+const STATS = [
+  { label: 'Models evaluated', value: String(total) },
+  { label: 'Build budget', value: `~${budgetHours} h each` },
+  { label: 'Weights', value: `${openCount} open · ${closedCount} closed` },
+  { label: 'Game', value: 'Dou Shou Qi' },
+] as const;
+---
+
+<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+  {
+    STATS.map((stat) => (
+      <div class="rounded-xl border border-line bg-raised px-4 py-3.5">
+        <dt class="text-[0.65rem] font-semibold tracking-[0.09em] text-subtle uppercase">
+          {stat.label}
+        </dt>
+        <dd class="mt-1.5 text-lg font-semibold text-fg">{stat.value}</dd>
+      </div>
+    ))
+  }
+</dl>

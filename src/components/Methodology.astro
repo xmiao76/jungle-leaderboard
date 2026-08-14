@@ -1,0 +1,42 @@
+---
+import { formatSnapshotDate } from '../lib/format';
+import ContentSection from './ContentSection.astro';
+
+interface Props {
+  isoDate: string;
+  budgetHours: number;
+}
+
+const { isoDate, budgetHours } = Astro.props;
+---
+
+<ContentSection id="methodology" title="Methodology">
+  <p>
+    <strong class="font-semibold text-fg">Build phase.</strong> Every model received the same task —
+    implement a complete, playable Jungle (Dou Shou Qi) program — and approximately {budgetHours}
+    hours of agentic coding time in which to finish it. Each model worked inside the coding harness
+    and effort setting recorded against it in the table above, so a row describes a
+    model-plus-harness configuration rather than a model in isolation.
+  </p>
+
+  <p>
+    <strong class="font-semibold text-fg">Competition phase.</strong> The finished programs were then
+    played against one another. A model is credited with a win when the program it wrote wins its
+    match: what competes is the artifact the model produced, not the model playing live.
+  </p>
+
+  <p>
+    <strong class="font-semibold text-fg">Failure criterion.</strong> A program in which a defect is
+    observed during competition — an illegal move accepted, a rule applied incorrectly, a crash, or a
+    state the game cannot recover from — is recorded as a failure for the model that wrote it.
+    Correctness is therefore a precondition rather than a tiebreaker: a program that plays strongly
+    but violates a rule does not outrank one that plays correctly.
+  </p>
+
+  <p>
+    <strong class="font-semibold text-fg">Snapshot.</strong> These standings reflect results as of
+    <time datetime={isoDate}>{formatSnapshotDate(isoDate)}</time>. Per-match records are not part of
+    this snapshot — the table publishes final placements only. Every entry links to both the deployed
+    build and its full source, so any result here can be replayed and inspected directly.
+  </p>
+</ContentSection>

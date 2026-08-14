@@ -1,0 +1,34 @@
+---
+import type { Access } from '../data/models';
+
+interface Props {
+  access: Access;
+}
+
+const { access } = Astro.props;
+
+const STYLES = {
+  open: 'border-open-line bg-open-soft text-open',
+  closed: 'border-closed-line bg-closed-soft text-closed',
+} as const;
+
+const LABELS = {
+  open: 'Open',
+  closed: 'Closed',
+} as const;
+
+const TITLES = {
+  open: 'Open weights — publicly downloadable',
+  closed: 'Closed weights — available via API only',
+} as const;
+---
+
+<span
+  class:list={[
+    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold',
+    STYLES[access],
+  ]}
+  title={TITLES[access]}
+>
+  {LABELS[access]}
+</span>

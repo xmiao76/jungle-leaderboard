@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Jungle Leaderboard">
+  <title>Jungle Leaderboard</title>
+  <rect width="32" height="32" rx="7" fill="#101725" />
+  <!-- Three podium bars: gold, silver, bronze. -->
+  <rect x="6" y="15" width="6" height="11" rx="1.5" fill="#c9cdd6" />
+  <rect x="13" y="9" width="6" height="17" rx="1.5" fill="#e8b23c" />
+  <rect x="20" y="18" width="6" height="8" rx="1.5" fill="#c07a3a" />
+</svg>

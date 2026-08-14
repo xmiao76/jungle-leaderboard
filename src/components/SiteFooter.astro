@@ -1,0 +1,29 @@
+---
+import { SITE } from '../data/site';
+import { formatSnapshotDate } from '../lib/format';
+
+interface Props {
+  isoDate: string;
+}
+
+const { isoDate } = Astro.props;
+
+const LINK = 'text-muted underline decoration-line-strong underline-offset-2 hover:text-accent';
+---
+
+<footer class="mt-16 border-t border-line py-9 text-xs leading-relaxed text-subtle">
+  <p>
+    Benchmark designed and run by
+    <a href={SITE.authorUrl} target="_blank" rel="noopener noreferrer" class={LINK}>
+      {SITE.author}
+    </a>. Source for this page:
+    <a href={SITE.repoUrl} target="_blank" rel="noopener noreferrer" class={LINK}>
+      github.com/{SITE.author}/jungle-leaderboard
+    </a>.
+  </p>
+
+  <p class="mt-2">
+    Last updated <time datetime={isoDate}>{formatSnapshotDate(isoDate)}</time>. Model and product
+    names are the trademarks of their respective owners.
+  </p>
+</footer>

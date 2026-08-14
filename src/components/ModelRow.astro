@@ -1,0 +1,51 @@
+---
+import type { RankedEntry } from '../lib/ranking';
+import { formatRecord } from '../lib/format';
+import AccessBadge from './AccessBadge.astro';
+import ArtifactLinks from './ArtifactLinks.astro';
+import RankBadge from './RankBadge.astro';
+
+interface Props {
+  entry: RankedEntry;
+  showRecord: boolean;
+}
+
+const { entry, showRecord } = Astro.props;
+
+const CELL = 'md:border-b md:border-line md:px-4 md:py-4 md:align-middle';
+---
+
+<tr class="md:transition-colors md:hover:bg-raised">
+  <td data-label="Rank" class={CELL}>
+    <RankBadge place={entry.place} medal={entry.medal} isTied={entry.isTied} />
+  </td>
+
+  <td data-label="Model" class={CELL}>
+    <div class="font-semibold text-fg">{entry.model}</div>
+    <div class="mt-0.5 text-xs text-subtle">{entry.provider}</div>
+  </td>
+
+  <td data-label="Access" class={CELL}>
+    <AccessBadge access={entry.access} />
+  </td>
+
+  <td data-label="Coding harness" class={CELL}>
+    <span class="font-mono text-[0.8rem] text-muted">{entry.harness}</span>
+  </td>
+
+  <td data-label="Effort" class={CELL}>
+    <span class="text-muted">{entry.effort}</span>
+  </td>
+
+  {
+    showRecord && (
+      <td data-label="Record" class={CELL}>
+        <span class="font-mono text-muted">{formatRecord(entry.record)}</span>
+      </td>
+    )
+  }
+
+  <td data-label="Artifacts" data-span class={CELL}>
+    <ArtifactLinks model={entry.model} playUrl={entry.playUrl} sourceUrl={entry.sourceUrl} />
+  </td>
+</tr>
