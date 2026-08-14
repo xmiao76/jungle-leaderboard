@@ -56,7 +56,7 @@ export const MODELS: readonly ModelEntry[] = [
   },
   {
     id: 'qwen-3-8',
-    model: 'Qwen-3.8',
+    model: 'Qwen-3.8-Max',
     provider: 'Alibaba',
     access: 'open',
     harness: 'ClaudeCode',

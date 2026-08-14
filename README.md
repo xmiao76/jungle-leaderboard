@@ -52,7 +52,7 @@ Standings as of **August 14, 2026**.
 | # | Model | Access | Coding harness | Effort | Play | Source |
 |---|-------|--------|----------------|--------|------|--------|
 | 1 | DeepSeek-V4-Pro-0813 | Open | ClaudeCode + Vision MCP | official Max | [Play](https://deepseek-jungle.pages.dev/) | [Source](https://github.com/xmiao76/deepseek_jungle_web) |
-| 2 | Qwen-3.8 | Open | ClaudeCode | xhigh | [Play](https://qwen-jungle.pages.dev/) | [Source](https://github.com/xmiao76/qwen_jungle_web) |
+| 2 | Qwen-3.8-Max | Open | ClaudeCode | xhigh | [Play](https://qwen-jungle.pages.dev/) | [Source](https://github.com/xmiao76/qwen_jungle_web) |
 | 3 | Claude-Fable-5 | Closed | Everything-ClaudeCode | Max | [Play](https://claude-jungle.pages.dev/) | [Source](https://github.com/xmiao76/claude_cc_jungle_web) |
 | 4 | Grok-4.6 | Closed | GrokBuild | xhigh | [Play](https://grok-jungle.pages.dev/) | [Source](https://github.com/xmiao76/grok_jungle_web) |
 | 5 | GPT-5.6-Sol | Closed | Codex | Ultra | [Play](https://gpt-jungle.pages.dev/) | [Source](https://github.com/xmiao76/gpt_jungle_web) |
