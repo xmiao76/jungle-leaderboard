@@ -7,9 +7,12 @@ interface Props {
 
 const { access } = Astro.props;
 
-const STYLES = {
-  open: 'border-open-line bg-open-soft text-open',
-  closed: 'border-closed-line bg-closed-soft text-closed',
+// Filled dot for open weights, hollow for closed. The label carries the meaning,
+// so the dot is reinforcement rather than the only signal. Deliberately not a
+// second accent hue: the palette holds one accent plus the three medals.
+const DOT = {
+  open: 'border-accent bg-accent',
+  closed: 'border-line-strong',
 } as const;
 
 const LABELS = {
@@ -23,12 +26,7 @@ const TITLES = {
 } as const;
 ---
 
-<span
-  class:list={[
-    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold',
-    STYLES[access],
-  ]}
-  title={TITLES[access]}
->
+<span class="inline-flex items-center gap-2 text-xs font-medium text-muted" title={TITLES[access]}>
+  <span class:list={['h-2 w-2 shrink-0 rounded-full border', DOT[access]]} aria-hidden="true"></span>
   {LABELS[access]}
 </span>

@@ -8,20 +8,35 @@ import RankBadge from './RankBadge.astro';
 interface Props {
   entry: RankedEntry;
   showRecord: boolean;
+  /** Position in the rendered list, used to stagger the reveal. */
+  index: number;
 }
 
-const { entry, showRecord } = Astro.props;
+const { entry, showRecord, index } = Astro.props;
+
+// Passed as a CSS variable rather than a utility class so one value drives both
+// the desktop rule (first cell's left border) and the mobile card's left edge.
+const RULE_COLOR = {
+  gold: 'var(--c-gold)',
+  silver: 'var(--c-silver)',
+  bronze: 'var(--c-bronze)',
+} as const;
+
+const rule = entry.medal ? RULE_COLOR[entry.medal] : 'var(--c-accent-line)';
+
+// Offset by the three podium cards so the whole page reveals top to bottom.
+const REVEAL_OFFSET = 3;
 
 const CELL = 'md:border-b md:border-line md:px-4 md:py-4 md:align-middle';
 ---
 
-<tr class="md:transition-colors md:hover:bg-raised">
-  <td data-label="Rank" class={CELL}>
+<tr class="reveal-fade" style={`--i:${index + REVEAL_OFFSET};--rule:${rule}`}>
+  <td data-label="Rank" class:list={[CELL, 'md:pl-5']}>
     <RankBadge place={entry.place} medal={entry.medal} isTied={entry.isTied} />
   </td>
 
   <td data-label="Model" class={CELL}>
-    <div class="font-semibold text-fg">{entry.model}</div>
+    <div class="font-display text-base leading-snug font-semibold text-fg">{entry.model}</div>
     <div class="mt-0.5 text-xs text-subtle">{entry.provider}</div>
   </td>
 
@@ -34,13 +49,13 @@ const CELL = 'md:border-b md:border-line md:px-4 md:py-4 md:align-middle';
   </td>
 
   <td data-label="Effort" class={CELL}>
-    <span class="text-muted">{entry.effort}</span>
+    <span class="text-sm text-muted">{entry.effort}</span>
   </td>
 
   {
     showRecord && (
       <td data-label="Record" class={CELL}>
-        <span class="font-mono text-muted">{formatRecord(entry.record)}</span>
+        <span class="font-mono text-sm text-muted">{formatRecord(entry.record)}</span>
       </td>
     )
   }

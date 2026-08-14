@@ -1,100 +1,97 @@
-@import "tailwindcss";
+/* Self-hosted display + text faces. Subset by unicode-range, so English pages
+   fetch only the latin cut. Fraunces carries an optical-size axis, which the
+   browser applies automatically to the large masthead. */
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/ibm-plex-sans/wght.css';
+@import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Design tokens. Dark-first; the light palette swaps the same variable names so
-   every component stays theme-agnostic.
+   "Tournament almanac": warm paper, one jade accent, medal metals reserved for
+   the podium. Light is the default; dark is a warm-neutral inversion rather
+   than a cool slate, so the two themes read as the same publication.
 
-   Lightness values are picked so every text/background pair used on the page
-   clears WCAG AA for normal text. The measured floor is 4.53:1 (subtle text on
-   inset, light theme); the tightest badge pair is 5.18:1. Lightening any `fg`,
-   `subtle`, or medal token re-opens that margin, so re-measure before doing it.
+   Palette discipline is deliberate — paper, ink, jade, and three metals. Do not
+   introduce a fourth hue for a new category; use weight, rule, or dot fill.
    --------------------------------------------------------------------------- */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --c-bg: oklch(0.15 0.012 258);
-  --c-raised: oklch(0.194 0.015 258);
-  --c-inset: oklch(0.128 0.012 258);
-  --c-line: oklch(0.3 0.018 258);
-  --c-line-strong: oklch(0.42 0.022 258);
+  --c-bg: oklch(0.977 0.009 85);
+  --c-raised: oklch(0.995 0.004 85);
+  --c-inset: oklch(0.958 0.013 84);
+  --c-line: oklch(0.893 0.014 80);
+  --c-line-strong: oklch(0.775 0.018 78);
 
-  --c-fg: oklch(0.96 0.004 258);
-  --c-muted: oklch(0.75 0.012 258);
-  --c-subtle: oklch(0.62 0.014 258);
+  --c-fg: oklch(0.245 0.018 65);
+  --c-muted: oklch(0.44 0.02 68);
+  /* 0.51, not lighter: the table-header labels sit on --c-inset, the tightest
+     pair in the light theme (5.07:1). Lightening this drops it below AA. */
+  --c-subtle: oklch(0.51 0.02 70);
 
-  --c-accent: oklch(0.74 0.13 226);
-  --c-accent-ink: oklch(0.17 0.02 258);
+  --c-accent: oklch(0.47 0.105 168);
+  --c-accent-ink: oklch(0.995 0.004 85);
+  --c-accent-soft: oklch(0.47 0.105 168 / 0.1);
+  --c-accent-line: oklch(0.47 0.105 168 / 0.4);
 
-  /* Badge palettes carry their own alpha: a `/12` opacity modifier is dropped
-     silently for `@theme inline` colors, so the tint must be a real token. */
-  --c-gold: oklch(0.82 0.14 88);
-  --c-gold-soft: oklch(0.82 0.14 88 / 0.14);
-  --c-gold-line: oklch(0.82 0.14 88 / 0.5);
+  /* Medal lightness is capped so badge text clears 4.5:1 on its own tint. */
+  --c-gold: oklch(0.5 0.13 82);
+  --c-gold-soft: oklch(0.5 0.13 82 / 0.11);
+  --c-gold-line: oklch(0.5 0.13 82 / 0.38);
 
-  --c-silver: oklch(0.84 0.015 258);
-  --c-silver-soft: oklch(0.84 0.015 258 / 0.14);
-  --c-silver-line: oklch(0.84 0.015 258 / 0.5);
+  --c-silver: oklch(0.5 0.012 80);
+  --c-silver-soft: oklch(0.5 0.012 80 / 0.1);
+  --c-silver-line: oklch(0.5 0.012 80 / 0.34);
 
-  --c-bronze: oklch(0.71 0.11 52);
-  --c-bronze-soft: oklch(0.71 0.11 52 / 0.16);
-  --c-bronze-line: oklch(0.71 0.11 52 / 0.5);
+  --c-bronze: oklch(0.46 0.13 45);
+  --c-bronze-soft: oklch(0.46 0.13 45 / 0.1);
+  --c-bronze-line: oklch(0.46 0.13 45 / 0.34);
 
-  --c-open: oklch(0.76 0.14 162);
-  --c-open-soft: oklch(0.76 0.14 162 / 0.14);
-  --c-open-line: oklch(0.76 0.14 162 / 0.45);
-
-  --c-closed: oklch(0.75 0.12 305);
-  --c-closed-soft: oklch(0.75 0.12 305 / 0.14);
-  --c-closed-line: oklch(0.75 0.12 305 / 0.45);
-
-  --c-glow: oklch(0.74 0.13 226 / 0.11);
+  /* Atmosphere only — never used behind text. */
+  --c-wash-jade: oklch(0.47 0.105 168 / 0.07);
+  --c-wash-gold: oklch(0.5 0.13 82 / 0.06);
+  --c-row-hover: oklch(0.47 0.105 168 / 0.045);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
 
-    --c-bg: oklch(0.985 0.003 258);
-    --c-raised: oklch(1 0 0);
-    --c-inset: oklch(0.962 0.005 258);
-    --c-line: oklch(0.9 0.008 258);
-    --c-line-strong: oklch(0.78 0.012 258);
+    --c-bg: oklch(0.165 0.012 70);
+    --c-raised: oklch(0.212 0.014 70);
+    --c-inset: oklch(0.143 0.012 70);
+    --c-line: oklch(0.318 0.016 72);
+    --c-line-strong: oklch(0.44 0.02 74);
 
-    --c-fg: oklch(0.22 0.015 258);
-    --c-muted: oklch(0.44 0.016 258);
-    --c-subtle: oklch(0.54 0.016 258);
+    --c-fg: oklch(0.955 0.008 85);
+    --c-muted: oklch(0.755 0.014 80);
+    --c-subtle: oklch(0.63 0.016 78);
 
-    --c-accent: oklch(0.5 0.15 244);
-    --c-accent-ink: oklch(1 0 0);
+    --c-accent: oklch(0.78 0.12 168);
+    --c-accent-ink: oklch(0.18 0.02 70);
+    --c-accent-soft: oklch(0.78 0.12 168 / 0.14);
+    --c-accent-line: oklch(0.78 0.12 168 / 0.45);
 
-    /* Medal lightness is capped at 0.5 here: on a white-ish card, a lighter
-       gold or silver drops the badge text below 4.5:1 against its own tint. */
-    --c-gold: oklch(0.5 0.13 82);
-    --c-gold-soft: oklch(0.5 0.13 82 / 0.11);
-    --c-gold-line: oklch(0.5 0.13 82 / 0.35);
+    --c-gold: oklch(0.83 0.13 85);
+    --c-gold-soft: oklch(0.83 0.13 85 / 0.14);
+    --c-gold-line: oklch(0.83 0.13 85 / 0.5);
 
-    --c-silver: oklch(0.5 0.015 258);
-    --c-silver-soft: oklch(0.5 0.015 258 / 0.1);
-    --c-silver-line: oklch(0.5 0.015 258 / 0.32);
+    --c-silver: oklch(0.85 0.012 80);
+    --c-silver-soft: oklch(0.85 0.012 80 / 0.14);
+    --c-silver-line: oklch(0.85 0.012 80 / 0.5);
 
-    --c-bronze: oklch(0.46 0.13 45);
-    --c-bronze-soft: oklch(0.46 0.13 45 / 0.1);
-    --c-bronze-line: oklch(0.46 0.13 45 / 0.32);
+    --c-bronze: oklch(0.74 0.11 50);
+    --c-bronze-soft: oklch(0.74 0.11 50 / 0.16);
+    --c-bronze-line: oklch(0.74 0.11 50 / 0.5);
 
-    --c-open: oklch(0.48 0.13 162);
-    --c-open-soft: oklch(0.48 0.13 162 / 0.1);
-    --c-open-line: oklch(0.48 0.13 162 / 0.3);
-
-    --c-closed: oklch(0.48 0.16 305);
-    --c-closed-soft: oklch(0.48 0.16 305 / 0.1);
-    --c-closed-line: oklch(0.48 0.16 305 / 0.3);
-
-    --c-glow: oklch(0.5 0.15 244 / 0.07);
+    --c-wash-jade: oklch(0.78 0.12 168 / 0.09);
+    --c-wash-gold: oklch(0.83 0.13 85 / 0.06);
+    --c-row-hover: oklch(0.78 0.12 168 / 0.06);
   }
 }
 
-/* Expose the tokens as Tailwind utilities (bg-raised, text-muted, border-line…).
-   `inline` keeps the var() reference so the media query above still applies. */
+/* `inline` keeps the var() reference intact so the media query above still wins.
+   NOTE: opacity modifiers (bg-gold/12) are silently dropped for these colours —
+   use the -soft / -line tokens, which carry their own alpha. */
 @theme inline {
   --color-bg: var(--c-bg);
   --color-raised: var(--c-raised);
@@ -106,6 +103,8 @@
   --color-subtle: var(--c-subtle);
   --color-accent: var(--c-accent);
   --color-accent-ink: var(--c-accent-ink);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-line: var(--c-accent-line);
   --color-gold: var(--c-gold);
   --color-gold-soft: var(--c-gold-soft);
   --color-gold-line: var(--c-gold-line);
@@ -115,12 +114,12 @@
   --color-bronze: var(--c-bronze);
   --color-bronze-soft: var(--c-bronze-soft);
   --color-bronze-line: var(--c-bronze-line);
-  --color-open: var(--c-open);
-  --color-open-soft: var(--c-open-soft);
-  --color-open-line: var(--c-open-line);
-  --color-closed: var(--c-closed);
-  --color-closed-soft: var(--c-closed-soft);
-  --color-closed-line: var(--c-closed-line);
+}
+
+@theme {
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @layer base {
@@ -131,15 +130,20 @@
 
   body {
     background-color: var(--c-bg);
-    /* Soft light behind the leaderboard so the page does not read as a flat slab. */
-    background-image: radial-gradient(70rem 32rem at 50% -12rem, var(--c-glow), transparent 70%);
+    /* Two low-alpha washes give the paper depth without tinting any text. */
+    background-image:
+      radial-gradient(62rem 30rem at 10% -10rem, var(--c-wash-jade), transparent 64%),
+      radial-gradient(50rem 26rem at 94% -4rem, var(--c-wash-gold), transparent 60%);
     background-repeat: no-repeat;
     color: var(--c-fg);
+    font-family: var(--font-sans);
   }
 
-  /* Numerals line up column-to-column across rows. */
+  /* Numerals align column-to-column across rows. */
   th,
-  td {
+  td,
+  time,
+  .tabular {
     font-variant-numeric: tabular-nums;
   }
 
@@ -148,24 +152,84 @@
     outline-offset: 2px;
     border-radius: 2px;
   }
+}
 
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-    *,
-    *::before,
-    *::after {
-      transition-duration: 0.01ms !important;
-    }
+/* ---------------------------------------------------------------------------
+   Staged reveal. `--i` is set per item so entries appear in rank order.
+   Rows fade only: `transform` on a table-row is unreliable across browsers.
+   --------------------------------------------------------------------------- */
+@keyframes almanac-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes almanac-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal-fade {
+  animation: almanac-fade 0.55s ease-out both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.reveal-rise {
+  animation: almanac-rise 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  /* Content must never depend on an animation to become visible. */
+  .reveal-fade,
+  .reveal-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
   }
 }
 
 /* ---------------------------------------------------------------------------
-   Leaderboard table: a real <table> on tablet and up, collapsing to labelled
-   cards on narrow screens. The card layout needs generated content for the
-   column labels, which utilities cannot express, so it lives here.
+   Leaderboard table: a real <table> from 48rem up, collapsing to labelled
+   cards below. The card labels need generated content, which utilities cannot
+   express, so the responsive half lives here.
    --------------------------------------------------------------------------- */
+.lb-table tbody tr {
+  transition: background-color 0.18s ease-out;
+}
+
+.lb-table tbody tr:hover {
+  background-color: var(--c-row-hover);
+}
+
+/* `--rule` is set per row by ModelRow.astro: medal colour for the top three,
+   jade for everyone else. One variable drives the desktop rule and the mobile
+   card edge below. */
+@media (min-width: 48rem) {
+  .lb-table tbody td:first-child {
+    border-left: 3px solid var(--rule, transparent);
+  }
+}
+
 @media (max-width: 47.999rem) {
   .lb-table thead {
     display: none;
@@ -174,10 +238,11 @@
   .lb-table tr {
     display: block;
     border: 1px solid var(--c-line);
-    border-radius: 0.85rem;
+    border-left: 3px solid var(--rule, var(--c-line));
+    border-radius: 0.9rem;
     background-color: var(--c-raised);
-    padding: 0.35rem 0.9rem 0.9rem;
-    margin-bottom: 0.85rem;
+    padding: 0.4rem 1rem 1rem;
+    margin-bottom: 0.9rem;
   }
 
   .lb-table td {
@@ -187,31 +252,54 @@
     gap: 1.25rem;
     border: 0;
     border-bottom: 1px dashed var(--c-line);
-    padding: 0.6rem 0;
+    padding: 0.62rem 0;
     text-align: right;
   }
 
   .lb-table td::before {
     content: attr(data-label);
     color: var(--c-subtle);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     text-align: left;
     white-space: nowrap;
   }
 
-  /* The artifact links span the full card width instead of sitting in a row. */
+  /* Artifact links span the full card width rather than sitting in a row. */
   .lb-table td[data-span] {
     display: block;
     border-bottom: 0;
-    padding-bottom: 0.15rem;
+    padding-bottom: 0.2rem;
     text-align: left;
   }
 
   .lb-table td[data-span]::before {
     display: block;
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.6rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Podium: visual order is 2 · 1 · 3, but DOM order stays 1 · 2 · 3 so screen
+   readers and keyboard tabbing follow the ranking. Below 48rem it stacks in
+   DOM order, so the reordering is desktop-only.
+   --------------------------------------------------------------------------- */
+@media (min-width: 48rem) {
+  .podium {
+    align-items: end;
+  }
+
+  .podium > :nth-child(1) {
+    order: 2;
+  }
+
+  .podium > :nth-child(2) {
+    order: 1;
+  }
+
+  .podium > :nth-child(3) {
+    order: 3;
   }
 }
