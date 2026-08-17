@@ -37,19 +37,34 @@ export interface ModelEntry {
 }
 
 /** Date the ranking reflects, as an ISO calendar date. */
-export const SNAPSHOT_DATE = '2026-08-14';
+export const SNAPSHOT_DATE = '2026-08-17';
 
 /** Approximate agentic coding time each model was given for the build phase. */
-export const BUILD_BUDGET_HOURS = 3;
+export const BUILD_BUDGET_HOURS = 6;
 
 /**
  * The same budget spelled out, for running prose. Kept next to the numeral so
  * the two cannot drift — copy in the header, rules and meta description all read
  * from this rather than hardcoding a word.
  */
-export const BUILD_BUDGET_WORDS = 'three';
+export const BUILD_BUDGET_WORDS = 'six';
 
+/**
+ * Listed in ranking order. Places follow standard competition ranking, so the
+ * two entries sharing fourth place mean fifth is skipped and the next is sixth.
+ */
 export const MODELS: readonly ModelEntry[] = [
+  {
+    id: 'claude-opus-5',
+    model: 'Claude-Opus-5',
+    provider: 'Anthropic',
+    access: 'closed',
+    harness: 'ClaudeCode',
+    effort: 'Max',
+    playUrl: 'https://claude-jungle.pages.dev/',
+    sourceUrl: 'https://github.com/xmiao76/claude_cc_jungle_web',
+    place: 1,
+  },
   {
     id: 'deepseek-v4-pro-0813',
     model: 'DeepSeek-V4-Pro-0813',
@@ -59,29 +74,7 @@ export const MODELS: readonly ModelEntry[] = [
     effort: 'official Max',
     playUrl: 'https://deepseek-jungle.pages.dev/',
     sourceUrl: 'https://github.com/xmiao76/deepseek_jungle_web',
-    place: 1,
-  },
-  {
-    id: 'qwen-3-8',
-    model: 'Qwen-3.8-Max',
-    provider: 'Alibaba',
-    access: 'open',
-    harness: 'ClaudeCode',
-    effort: 'xhigh',
-    playUrl: 'https://qwen-jungle.pages.dev/',
-    sourceUrl: 'https://github.com/xmiao76/qwen_jungle_web',
     place: 2,
-  },
-  {
-    id: 'claude-fable-5',
-    model: 'Claude-Fable-5',
-    provider: 'Anthropic',
-    access: 'closed',
-    harness: 'Everything-ClaudeCode',
-    effort: 'Max',
-    playUrl: 'https://claude-jungle.pages.dev/',
-    sourceUrl: 'https://github.com/xmiao76/claude_cc_jungle_web',
-    place: 3,
   },
   {
     id: 'grok-4-6',
@@ -92,6 +85,28 @@ export const MODELS: readonly ModelEntry[] = [
     effort: 'xhigh',
     playUrl: 'https://grok-jungle.pages.dev/',
     sourceUrl: 'https://github.com/xmiao76/grok_jungle_web',
+    place: 3,
+  },
+  {
+    id: 'kimi-k3',
+    model: 'Kimi-K3',
+    provider: 'Moonshot AI',
+    access: 'open',
+    harness: 'ClaudeCode',
+    effort: 'Max',
+    playUrl: 'https://kimi-jungle.pages.dev/',
+    sourceUrl: 'https://github.com/xmiao76/kimi_jungle_web',
+    place: 4,
+  },
+  {
+    id: 'qwen-3-8',
+    model: 'Qwen-3.8-Max',
+    provider: 'Alibaba',
+    access: 'open',
+    harness: 'ClaudeCode',
+    effort: 'xhigh',
+    playUrl: 'https://qwen-jungle.pages.dev/',
+    sourceUrl: 'https://github.com/xmiao76/qwen_jungle_web',
     place: 4,
   },
   {
@@ -103,17 +118,6 @@ export const MODELS: readonly ModelEntry[] = [
     effort: 'Ultra',
     playUrl: 'https://gpt-jungle.pages.dev/',
     sourceUrl: 'https://github.com/xmiao76/gpt_jungle_web',
-    place: 5,
-  },
-  {
-    id: 'kimi-k3',
-    model: 'Kimi-K3',
-    provider: 'Moonshot AI',
-    access: 'open',
-    harness: 'ClaudeCode',
-    effort: 'Max',
-    playUrl: 'https://kimi-jungle.pages.dev/',
-    sourceUrl: 'https://github.com/xmiao76/kimi_jungle_web',
-    place: 5,
+    place: 6,
   },
 ];

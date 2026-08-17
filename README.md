@@ -1,6 +1,6 @@
 # Jungle Leaderboard
 
-A leaderboard for an agentic-coding benchmark. Each frontier AI model is given roughly three hours of
+A leaderboard for an agentic-coding benchmark. Each frontier AI model is given roughly six hours of
 agentic coding time to build a playable **Jungle** — Chinese *Dou Shou Qi* (斗兽棋), "the game of
 fighting animals" — program from an empty repository. The finished programs are then played against
 one another.
@@ -32,7 +32,7 @@ forces those positions to occur.
 ## Methodology
 
 **Build phase.** Every model received the same task — implement a complete, playable Jungle program
-— and approximately three hours of agentic coding time in which to finish it. Each model worked inside
+— and approximately six hours of agentic coding time in which to finish it. Each model worked inside
 the coding harness and effort setting recorded against it in the results table, so a row describes a
 model-plus-harness configuration rather than a model in isolation.
 
@@ -47,23 +47,23 @@ program that plays strongly but violates a rule does not outrank one that plays 
 
 ## Results
 
-Standings as of **August 14, 2026**.
+Standings as of **August 17, 2026**.
 
 | # | Model | Access | Coding harness | Effort | Play | Source |
 |---|-------|--------|----------------|--------|------|--------|
-| 1 | DeepSeek-V4-Pro-0813 | Open | ClaudeCode + Vision MCP | official Max | [Play](https://deepseek-jungle.pages.dev/) | [Source](https://github.com/xmiao76/deepseek_jungle_web) |
-| 2 | Qwen-3.8-Max | Open | ClaudeCode | xhigh | [Play](https://qwen-jungle.pages.dev/) | [Source](https://github.com/xmiao76/qwen_jungle_web) |
-| 3 | Claude-Fable-5 | Closed | Everything-ClaudeCode | Max | [Play](https://claude-jungle.pages.dev/) | [Source](https://github.com/xmiao76/claude_cc_jungle_web) |
-| 4 | Grok-4.6 | Closed | GrokBuild | xhigh | [Play](https://grok-jungle.pages.dev/) | [Source](https://github.com/xmiao76/grok_jungle_web) |
-| 5 | GPT-5.6-Sol | Closed | Codex | Ultra | [Play](https://gpt-jungle.pages.dev/) | [Source](https://github.com/xmiao76/gpt_jungle_web) |
-| 5 | Kimi-K3 | Open | ClaudeCode | Max | [Play](https://kimi-jungle.pages.dev/) | [Source](https://github.com/xmiao76/kimi_jungle_web) |
+| 1 | Claude-Opus-5 | Closed | ClaudeCode | Max | [Play](https://claude-jungle.pages.dev/) | [Source](https://github.com/xmiao76/claude_cc_jungle_web) |
+| 2 | DeepSeek-V4-Pro-0813 | Open | ClaudeCode + Vision MCP | official Max | [Play](https://deepseek-jungle.pages.dev/) | [Source](https://github.com/xmiao76/deepseek_jungle_web) |
+| 3 | Grok-4.6 | Closed | GrokBuild | xhigh | [Play](https://grok-jungle.pages.dev/) | [Source](https://github.com/xmiao76/grok_jungle_web) |
+| 4 | Kimi-K3 | Open | ClaudeCode | Max | [Play](https://kimi-jungle.pages.dev/) | [Source](https://github.com/xmiao76/kimi_jungle_web) |
+| 4 | Qwen-3.8-Max | Open | ClaudeCode | xhigh | [Play](https://qwen-jungle.pages.dev/) | [Source](https://github.com/xmiao76/qwen_jungle_web) |
+| 6 | GPT-5.6-Sol | Closed | Codex | Ultra | [Play](https://gpt-jungle.pages.dev/) | [Source](https://github.com/xmiao76/gpt_jungle_web) |
 
 *Access* indicates whether the model's weights are publicly available.
 
 ### Reading the results
 
-Places follow standard competition ranking. GPT-5.6-Sol and Kimi-K3 finished level and therefore
-share fifth place; the place immediately below a shared position is skipped, so no sixth place is
+Places follow standard competition ranking. Kimi-K3 and Qwen-3.8-Max finished level and therefore
+share fourth place; the place immediately below a shared position is skipped, so no fifth place is
 awarded. Models within a tie are level with one another and are not ordered — the alphabetical
 sequence shown inside a tie carries no meaning.
 

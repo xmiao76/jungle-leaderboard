@@ -35,13 +35,29 @@ A single static page whose entire content derives from one data module. The flow
   URLs outside github.com, and place sequences that are not valid competition ranking.
 - **`buildLeaderboard()` sorts and annotates; it never mutates.** It returns new objects carrying
   `isTied` and `medal`. Ties are expressed by two entries sharing a `place`, and standard competition
-  ranking means the next place is skipped (1,2,3,4,5,5 — never a 6). The validator enforces this, so
-  changing a place usually means changing another one too.
+  ranking means a group of k tied entries consumes the k-1 places below it. The current data is
+  1,2,3,4,4,6 — two share fourth, so fifth is not awarded. The validator enforces this, so changing
+  one place usually means changing another too.
 - **The Record column is conditional.** `summarize().hasRecords` is false while no entry has a
   `record`, and the column is omitted entirely rather than rendered empty. Adding a `record` to any
   entry makes the column appear with no template change.
+- **Ranking prose is generated, not hand-written.** `describeRanking()` in `src/lib/ties.ts` turns the
+  places into "Places follow standard competition ranking. Two models share fourth place, so no fifth
+  place is awarded." Both the table caption and the "Reading the table" section call it, so editing a
+  `place` updates the copy automatically. Never type an ordinal like "fifth" into a component — the
+  page contradicted its own table twice before this existed. The README is hand-written and does need
+  updating by hand.
 - Logic lives in `src/lib/` and is unit-tested; `.astro` components have no unit tests and are
   verified through build output instead.
+
+## Template authoring gotcha
+
+**A newline directly after `{expression}` is dropped, not collapsed to a space.** `{budgetHours}` on
+one line and `hours` on the next renders `3hours`; this shipped for three deploys. The same applies to
+an HTML comment placed mid-sentence, which is why explanatory comments live in component frontmatter
+rather than in markup. Either keep the expression and its neighbouring words on one source line, or
+end it with the explicit `{' '}` idiom — see the caption in `LeaderboardTable.astro`. After touching
+interpolated copy, grep the built `dist/index.html` for joined words.
 
 ## Design direction
 
