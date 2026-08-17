@@ -1,5 +1,6 @@
 ---
 import type { RankedEntry } from '../lib/ranking';
+import { describeRanking } from '../lib/ties';
 import ModelRow from './ModelRow.astro';
 
 interface Props {
@@ -8,6 +9,9 @@ interface Props {
 }
 
 const { entries, showRecord } = Astro.props;
+
+// Generated from the data, so the caption cannot contradict the places shown.
+const rankingNote = describeRanking(entries);
 
 const HEADINGS = ['Rank', 'Model', 'Access', 'Coding harness', 'Effort'] as const;
 const HEAD_CELL = 'px-4 py-3.5 font-semibold';
@@ -26,7 +30,7 @@ const HEAD_CELL = 'px-4 py-3.5 font-semibold';
   >
     <table class="lb-table w-full caption-bottom border-collapse text-left text-sm">
       <caption class="px-1 pt-4 text-xs leading-relaxed text-subtle md:px-5 md:pb-4">
-        Standard competition ranking: two models share fifth place, so no sixth place is awarded.
+        {rankingNote}{' '}
         <span class="whitespace-nowrap">Access</span> indicates whether the model's weights are publicly
         available. Every link opens in a new tab.
       </caption>

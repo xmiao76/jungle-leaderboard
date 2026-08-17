@@ -12,12 +12,14 @@ import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { buildLeaderboard, validateEntries } from '../lib/ranking';
 import { summarize } from '../lib/summary';
+import { describeRanking } from '../lib/ties';
 
 // Fails the build rather than shipping a page with bad data or a broken link.
 validateEntries(MODELS);
 
 const ranked = buildLeaderboard(MODELS);
 const stats = summarize(MODELS);
+const rankingNote = describeRanking(MODELS);
 
 const structuredData = JSON.stringify({
   '@context': 'https://schema.org',
@@ -57,8 +59,7 @@ const structuredData = JSON.stringify({
 
     <ContentSection id="reading-the-table" title="Reading the table">
       <p>
-        Places follow standard competition ranking. Two models finished level and therefore share
-        fifth place; the place immediately below a shared position is skipped, so there is no sixth.
+        {rankingNote}{' '}
         Rows marked <span class="font-semibold text-fg">tied</span> are level with one another, not
         ordered within the tie — the alphabetical order shown inside a tie carries no meaning.
       </p>

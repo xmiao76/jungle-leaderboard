@@ -74,17 +74,21 @@ describe('buildLeaderboard', () => {
   describe('applied to the published data', () => {
     const ranked = buildLeaderboard(MODELS);
 
-    it('produces standard competition places with a shared fifth and no sixth', () => {
-      expect(ranked.map((r) => r.place)).toEqual([1, 2, 3, 4, 5, 5]);
-      expect(ranked.some((r) => r.place === 6)).toBe(false);
+    it('produces standard competition places with a shared fourth and no fifth', () => {
+      expect(ranked.map((r) => r.place)).toEqual([1, 2, 3, 4, 4, 6]);
+      expect(ranked.some((r) => r.place === 5)).toBe(false);
     });
 
-    it('puts DeepSeek first and marks both fifth-place models as tied', () => {
-      expect(ranked[0]?.model).toBe('DeepSeek-V4-Pro-0813');
+    it('puts Claude-Opus-5 first and marks both fourth-place models as tied', () => {
+      expect(ranked[0]?.model).toBe('Claude-Opus-5');
 
-      const fifth = ranked.filter((r) => r.place === 5);
-      expect(fifth.map((r) => r.model)).toEqual(['GPT-5.6-Sol', 'Kimi-K3']);
-      expect(fifth.every((r) => r.isTied)).toBe(true);
+      const fourth = ranked.filter((r) => r.place === 4);
+      expect(fourth.map((r) => r.model)).toEqual(['Kimi-K3', 'Qwen-3.8-Max']);
+      expect(fourth.every((r) => r.isTied)).toBe(true);
+    });
+
+    it('no longer lists the retired Claude-Fable-5 entry', () => {
+      expect(ranked.map((r) => r.model)).not.toContain('Claude-Fable-5');
     });
 
     it('medals exactly the first three rows', () => {
