@@ -74,17 +74,30 @@ describe('buildLeaderboard', () => {
   describe('applied to the published data', () => {
     const ranked = buildLeaderboard(MODELS);
 
-    it('produces standard competition places with a shared fourth and no fifth', () => {
-      expect(ranked.map((r) => r.place)).toEqual([1, 2, 3, 4, 4, 6]);
+    it('produces standard competition places with two shared places, skipping fifth and seventh', () => {
+      expect(ranked.map((r) => r.place)).toEqual([1, 2, 3, 4, 4, 6, 6]);
+      // Each pair consumes the place below it, so neither is awarded.
       expect(ranked.some((r) => r.place === 5)).toBe(false);
+      expect(ranked.some((r) => r.place === 7)).toBe(false);
     });
 
-    it('puts Claude-Opus-5 first and marks both fourth-place models as tied', () => {
+    it('puts Claude-Opus-5 first and flags both tie groups', () => {
       expect(ranked[0]?.model).toBe('Claude-Opus-5');
 
       const fourth = ranked.filter((r) => r.place === 4);
-      expect(fourth.map((r) => r.model)).toEqual(['Kimi-K3', 'Qwen-3.8-Max']);
-      expect(fourth.every((r) => r.isTied)).toBe(true);
+      expect(fourth.map((r) => r.model)).toEqual(['GLM-5.3', 'GPT-5.6-Sol']);
+
+      const sixth = ranked.filter((r) => r.place === 6);
+      expect(sixth.map((r) => r.model)).toEqual(['Kimi-K3', 'Qwen-3.8-Max']);
+
+      expect([...fourth, ...sixth].every((r) => r.isTied)).toBe(true);
+    });
+
+    it('lists the newly added GLM-5.3 entry', () => {
+      const glm = ranked.find((r) => r.id === 'glm-5-3');
+      expect(glm?.model).toBe('GLM-5.3');
+      expect(glm?.place).toBe(4);
+      expect(glm?.medal).toBeNull();
     });
 
     it('no longer lists the retired Claude-Fable-5 entry', () => {
@@ -92,7 +105,7 @@ describe('buildLeaderboard', () => {
     });
 
     it('medals exactly the first three rows', () => {
-      expect(ranked.map((r) => r.medal)).toEqual(['gold', 'silver', 'bronze', null, null, null]);
+      expect(ranked.map((r) => r.medal)).toEqual(['gold', 'silver', 'bronze', null, null, null, null]);
     });
   });
 });

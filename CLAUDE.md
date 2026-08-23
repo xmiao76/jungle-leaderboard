@@ -36,8 +36,8 @@ A single static page whose entire content derives from one data module. The flow
 - **`buildLeaderboard()` sorts and annotates; it never mutates.** It returns new objects carrying
   `isTied` and `medal`. Ties are expressed by two entries sharing a `place`, and standard competition
   ranking means a group of k tied entries consumes the k-1 places below it. The current data is
-  1,2,3,4,4,6 — two share fourth, so fifth is not awarded. The validator enforces this, so changing
-  one place usually means changing another too.
+  1,2,3,4,4,6,6 — two share fourth and two share sixth, so neither fifth nor seventh is awarded. The
+  validator enforces this, so changing one place usually means changing another too.
 - **The Record column is conditional.** `summarize().hasRecords` is false while no entry has a
   `record`, and the column is omitted entirely rather than rendered empty. Adding a `record` to any
   entry makes the column appear with no template change.
@@ -47,6 +47,9 @@ A single static page whose entire content derives from one data module. The flow
   `place` updates the copy automatically. Never type an ordinal like "fifth" into a component — the
   page contradicted its own table twice before this existed. The README is hand-written and does need
   updating by hand.
+- **The model count in the masthead is derived too.** `SiteHeader.astro` renders
+  `capitalize(countWord(modelCount))`, fed from `summarize().total`. Adding an entry updates the
+  headline automatically; never type "Seven" into the template.
 - Logic lives in `src/lib/` and is unit-tested; `.astro` components have no unit tests and are
   verified through build output instead.
 

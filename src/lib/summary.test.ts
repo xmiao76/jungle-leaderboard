@@ -5,8 +5,8 @@ import { summarize } from './summary';
 describe('summarize', () => {
   it('reports the open/closed split for the published data', () => {
     expect(summarize(MODELS)).toEqual({
-      total: 6,
-      openCount: 3,
+      total: 7,
+      openCount: 4,
       closedCount: 3,
       hasRecords: false,
     });

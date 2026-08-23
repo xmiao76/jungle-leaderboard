@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { SNAPSHOT_DATE } from '../data/models';
-import { countWord, formatRecord, formatSnapshotDate, ordinalWord } from './format';
+import { capitalize, countWord, formatRecord, formatSnapshotDate, ordinalWord } from './format';
 
 describe('formatSnapshotDate', () => {
   it('formats the published snapshot date', () => {
-    expect(formatSnapshotDate(SNAPSHOT_DATE)).toBe('August 17, 2026');
+    expect(formatSnapshotDate(SNAPSHOT_DATE)).toBe('August 23, 2026');
   });
 
   it('does not drift a day in western timezones', () => {
@@ -55,6 +55,17 @@ describe('countWord', () => {
 
   it('rejects a negative count', () => {
     expect(() => countWord(-1)).toThrow(/non-negative integer/);
+  });
+});
+
+describe('capitalize', () => {
+  it('raises the first letter and leaves the rest alone', () => {
+    expect(capitalize('seven')).toBe('Seven');
+    expect(capitalize('Z.ai')).toBe('Z.ai');
+  });
+
+  it('tolerates an empty string', () => {
+    expect(capitalize('')).toBe('');
   });
 });
 

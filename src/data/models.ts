@@ -37,7 +37,7 @@ export interface ModelEntry {
 }
 
 /** Date the ranking reflects, as an ISO calendar date. */
-export const SNAPSHOT_DATE = '2026-08-17';
+export const SNAPSHOT_DATE = '2026-08-23';
 
 /** Approximate agentic coding time each model was given for the build phase. */
 export const BUILD_BUDGET_HOURS = 6;
@@ -50,8 +50,9 @@ export const BUILD_BUDGET_HOURS = 6;
 export const BUILD_BUDGET_WORDS = 'six';
 
 /**
- * Listed in ranking order. Places follow standard competition ranking, so the
- * two entries sharing fourth place mean fifth is skipped and the next is sixth.
+ * Listed in ranking order. Places follow standard competition ranking, so each
+ * pair sharing a place consumes the one below it: fourth is shared (no fifth)
+ * and sixth is shared (no seventh).
  */
 export const MODELS: readonly ModelEntry[] = [
   {
@@ -88,6 +89,28 @@ export const MODELS: readonly ModelEntry[] = [
     place: 3,
   },
   {
+    id: 'glm-5-3',
+    model: 'GLM-5.3',
+    provider: 'Z.ai',
+    access: 'open',
+    harness: 'ClaudeCode',
+    effort: 'Max',
+    playUrl: 'https://glm-jungle.pages.dev/',
+    sourceUrl: 'https://github.com/xmiao76/glm_jungle_web',
+    place: 4,
+  },
+  {
+    id: 'gpt-5-6-sol',
+    model: 'GPT-5.6-Sol',
+    provider: 'OpenAI',
+    access: 'closed',
+    harness: 'Codex',
+    effort: 'Max',
+    playUrl: 'https://gpt-jungle.pages.dev/',
+    sourceUrl: 'https://github.com/xmiao76/gpt_jungle_web',
+    place: 4,
+  },
+  {
     id: 'kimi-k3',
     model: 'Kimi-K3',
     provider: 'Moonshot AI',
@@ -96,7 +119,7 @@ export const MODELS: readonly ModelEntry[] = [
     effort: 'Max',
     playUrl: 'https://kimi-jungle.pages.dev/',
     sourceUrl: 'https://github.com/xmiao76/kimi_jungle_web',
-    place: 4,
+    place: 6,
   },
   {
     id: 'qwen-3-8',
@@ -107,17 +130,6 @@ export const MODELS: readonly ModelEntry[] = [
     effort: 'xhigh',
     playUrl: 'https://qwen-jungle.pages.dev/',
     sourceUrl: 'https://github.com/xmiao76/qwen_jungle_web',
-    place: 4,
-  },
-  {
-    id: 'gpt-5-6-sol',
-    model: 'GPT-5.6-Sol',
-    provider: 'OpenAI',
-    access: 'closed',
-    harness: 'Codex',
-    effort: 'Ultra',
-    playUrl: 'https://gpt-jungle.pages.dev/',
-    sourceUrl: 'https://github.com/xmiao76/gpt_jungle_web',
     place: 6,
   },
 ];
