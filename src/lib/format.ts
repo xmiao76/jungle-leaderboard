@@ -68,6 +68,11 @@ export function countWord(n: number): string {
   return n < COUNT_WORDS.length ? COUNT_WORDS[n]! : String(n);
 }
 
+/** `two` → `Two`. Capitalises the first letter for sentence-initial copy. */
+export function capitalize(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
 /** Renders a head-to-head record as `W–L–D`, or an em dash when unpublished. */
 export function formatRecord(record: MatchRecord | undefined): string {
   if (!record) return '—';

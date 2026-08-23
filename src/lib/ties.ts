@@ -4,7 +4,7 @@
  * sharing a place consumes the k-1 places below it, and those are not awarded.
  */
 import type { ModelEntry } from '../data/models';
-import { countWord, ordinalWord } from './format';
+import { capitalize, countWord, ordinalWord } from './format';
 
 export interface TieGroup {
   readonly place: number;
@@ -28,8 +28,6 @@ export function findTieGroups(entries: readonly ModelEntry[]): readonly TieGroup
       skippedPlaces: Array.from({ length: count - 1 }, (_, offset) => place + 1 + offset),
     }));
 }
-
-const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
 function joinWords(words: readonly string[]): string {
   if (words.length <= 1) return words[0] ?? '';

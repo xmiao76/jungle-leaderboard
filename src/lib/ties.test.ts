@@ -71,14 +71,19 @@ describe('describeTies', () => {
   });
 
   it('describes the published standings', () => {
-    expect(describeTies(MODELS)).toBe('Two models share fourth place, so no fifth place is awarded.');
+    expect(describeTies(MODELS)).toBe(
+      'Two models share fourth place, so no fifth place is awarded. ' +
+        'Two models share sixth place, so no seventh place is awarded.',
+    );
   });
 });
 
 describe('describeRanking', () => {
   it('appends the tie explanation to the preface', () => {
     expect(describeRanking(MODELS)).toBe(
-      'Places follow standard competition ranking. Two models share fourth place, so no fifth place is awarded.',
+      'Places follow standard competition ranking. ' +
+        'Two models share fourth place, so no fifth place is awarded. ' +
+        'Two models share sixth place, so no seventh place is awarded.',
     );
   });
 
