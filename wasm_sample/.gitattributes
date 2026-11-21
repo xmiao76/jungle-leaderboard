@@ -1,0 +1,7 @@
+* text=auto
+# The rules digest is SHA-256 over these exact LF bytes.
+spec/rules/*.json text eol=lf
+wit/*.wit text eol=lf
+*.wasm binary
+*.ttf binary
+*.bin binary

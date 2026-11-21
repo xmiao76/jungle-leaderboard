@@ -22,3 +22,9 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Arena test-entrant build output (the built fixtures live in arena/test-fixtures/)
+tests/test-entrant/target/
+test-results/
+playwright-report/
+coverage/

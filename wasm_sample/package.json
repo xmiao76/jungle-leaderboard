@@ -1,0 +1,30 @@
+{
+  "name": "jungle-wasm-sample",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone Jungle (Dou Shou Qi) web game whose release build also emits a single-file Arena entrant (jungle-opus55-1.0.0.wasm).",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "assets": "node scripts/fetch-assets.mjs && node scripts/build-atlas.mjs",
+    "build:all": "node scripts/build-all.mjs",
+    "dev": "vite --config web/vite.config.ts",
+    "test": "cargo test --workspace && vitest run",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "host": "node scripts/build-all.mjs --skip-web-build && vite --config web/vite.config.ts --open host/index.html",
+    "inspect": "node scripts/inspect.mjs",
+    "deploy": "npm run build:all && npm run test && wrangler pages deploy web/dist --project-name jungle-wasm-sample --branch main --commit-dirty=true"
+  },
+  "devDependencies": {
+    "@bytecodealliance/jco-transpile": "0.24.0",
+    "@playwright/test": "1.65.1",
+    "@resvg/resvg-js": "2.6.2",
+    "typescript": "6.0.3",
+    "vite": "8.2.1",
+    "vitest": "4.1.10",
+    "wrangler": "4.123.0"
+  }
+}

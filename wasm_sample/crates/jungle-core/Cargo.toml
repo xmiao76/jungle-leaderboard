@@ -1,0 +1,13 @@
+[package]
+name = "jungle-core"
+description = "Jungle (Dou Shou Qi) rules, search and renderer shared by the standalone game and the Arena entrant."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+miniz_oxide.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

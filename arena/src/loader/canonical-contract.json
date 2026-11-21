@@ -1,0 +1,26 @@
+{
+  "imports": {
+    "jungle:arena/display@1.0.0": {
+      "present": "func(width: u16, height: u16, rgba: list<u8>)"
+    }
+  },
+  "exports": {
+    "jungle:arena/game@1.0.0": {
+      "choose-move": "func(state: record{rev:u32,board:list<option<record{owner:enum{red,blue},kind:enum{rat,cat,dog,wolf,leopard,tiger,lion,elephant}}>>,first-side:enum{red,blue},to-play:enum{red,blue},history:list<record{src:u8,dst:u8}>,no-capture-plies:u32,status:enum{playing,won,drawn,forfeited},winner:option<enum{red,blue}>,reason:string}, legal: list<record{src:u8,dst:u8}>, node-budget: u32) -> u32",
+      "info": "func() -> record{title:string,game-version:string,model:string,code-agent:string,engine-version:string,runtime:string,rules-id:string,rules-digest:string}",
+      "init": "func(config: record{seat:enum{red,blue},difficulty:enum{easy,medium,hard},seed:u32})",
+      "render": "func(state: record{rev:u32,board:list<option<record{owner:enum{red,blue},kind:enum{rat,cat,dog,wolf,leopard,tiger,lion,elephant}}>>,first-side:enum{red,blue},to-play:enum{red,blue},history:list<record{src:u8,dst:u8}>,no-capture-plies:u32,status:enum{playing,won,drawn,forfeited},winner:option<enum{red,blue}>,reason:string}, flipped: bool, progress: u16)",
+      "type:animal": "enum{rat,cat,dog,wolf,leopard,tiger,lion,elephant}",
+      "type:level": "enum{easy,medium,hard}",
+      "type:metadata": "record{title:string,game-version:string,model:string,code-agent:string,engine-version:string,runtime:string,rules-id:string,rules-digest:string}",
+      "type:phase": "enum{playing,won,drawn,forfeited}",
+      "type:piece": "record{owner:enum{red,blue},kind:enum{rat,cat,dog,wolf,leopard,tiger,lion,elephant}}",
+      "type:ply-move": "record{src:u8,dst:u8}",
+      "type:settings": "record{seat:enum{red,blue},difficulty:enum{easy,medium,hard},seed:u32}",
+      "type:side": "enum{red,blue}",
+      "type:snapshot": "record{rev:u32,board:list<option<record{owner:enum{red,blue},kind:enum{rat,cat,dog,wolf,leopard,tiger,lion,elephant}}>>,first-side:enum{red,blue},to-play:enum{red,blue},history:list<record{src:u8,dst:u8}>,no-capture-plies:u32,status:enum{playing,won,drawn,forfeited},winner:option<enum{red,blue}>,reason:string}"
+    }
+  },
+  "otherImports": [],
+  "otherExports": []
+}

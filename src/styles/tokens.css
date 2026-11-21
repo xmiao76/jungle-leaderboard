@@ -1,0 +1,142 @@
+/* Design tokens shared by the leaderboard (Astro) and the Arena (Vite + Vue).
+   Imported after tailwindcss by src/styles/global.css and arena/src/styles/arena.css. */
+
+/* ---------------------------------------------------------------------------
+   "Tournament almanac": warm paper, one jade accent, medal metals reserved for
+   the podium. Light is the default; dark is a warm-neutral inversion rather
+   than a cool slate, so the two themes read as the same publication.
+
+   Palette discipline is deliberate — paper, ink, jade, and three metals. Do not
+   introduce a fourth hue for a new category; use weight, rule, or dot fill.
+   --------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  --c-bg: oklch(0.977 0.009 85);
+  --c-raised: oklch(0.995 0.004 85);
+  --c-inset: oklch(0.958 0.013 84);
+  --c-line: oklch(0.893 0.014 80);
+  --c-line-strong: oklch(0.775 0.018 78);
+
+  --c-fg: oklch(0.245 0.018 65);
+  --c-muted: oklch(0.44 0.02 68);
+  /* 0.51, not lighter: the table-header labels sit on --c-inset, the tightest
+     pair in the light theme (5.07:1). Lightening this drops it below AA. */
+  --c-subtle: oklch(0.51 0.02 70);
+
+  --c-accent: oklch(0.47 0.105 168);
+  --c-accent-ink: oklch(0.995 0.004 85);
+  --c-accent-soft: oklch(0.47 0.105 168 / 0.1);
+  --c-accent-line: oklch(0.47 0.105 168 / 0.4);
+
+  /* Medal lightness is capped so badge text clears 4.5:1 on its own tint. */
+  --c-gold: oklch(0.5 0.13 82);
+  --c-gold-soft: oklch(0.5 0.13 82 / 0.11);
+  --c-gold-line: oklch(0.5 0.13 82 / 0.38);
+
+  --c-silver: oklch(0.5 0.012 80);
+  --c-silver-soft: oklch(0.5 0.012 80 / 0.1);
+  --c-silver-line: oklch(0.5 0.012 80 / 0.34);
+
+  --c-bronze: oklch(0.46 0.13 45);
+  --c-bronze-soft: oklch(0.46 0.13 45 / 0.1);
+  --c-bronze-line: oklch(0.46 0.13 45 / 0.34);
+
+  /* Atmosphere only — never used behind text. */
+  --c-wash-jade: oklch(0.47 0.105 168 / 0.07);
+  --c-wash-gold: oklch(0.5 0.13 82 / 0.06);
+  --c-row-hover: oklch(0.47 0.105 168 / 0.045);
+
+  /* Arena side identity only (Red/Blue are the game's own names): the single sanctioned
+     exception to the four-hue palette. Measured: tightest pair is side-red on inset at
+     5.79:1 (light) and side-red on raised at 7.50:1 (dark). Never use for categories. */
+  --c-side-red: oklch(0.5 0.17 28);
+  --c-side-red-soft: oklch(0.5 0.17 28 / 0.1);
+  --c-side-red-line: oklch(0.5 0.17 28 / 0.42);
+  --c-side-blue: oklch(0.47 0.13 255);
+  --c-side-blue-soft: oklch(0.47 0.13 255 / 0.1);
+  --c-side-blue-line: oklch(0.47 0.13 255 / 0.42);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --c-bg: oklch(0.165 0.012 70);
+    --c-raised: oklch(0.212 0.014 70);
+    --c-inset: oklch(0.143 0.012 70);
+    --c-line: oklch(0.318 0.016 72);
+    --c-line-strong: oklch(0.44 0.02 74);
+
+    --c-fg: oklch(0.955 0.008 85);
+    --c-muted: oklch(0.755 0.014 80);
+    --c-subtle: oklch(0.63 0.016 78);
+
+    --c-accent: oklch(0.78 0.12 168);
+    --c-accent-ink: oklch(0.18 0.02 70);
+    --c-accent-soft: oklch(0.78 0.12 168 / 0.14);
+    --c-accent-line: oklch(0.78 0.12 168 / 0.45);
+
+    --c-gold: oklch(0.83 0.13 85);
+    --c-gold-soft: oklch(0.83 0.13 85 / 0.14);
+    --c-gold-line: oklch(0.83 0.13 85 / 0.5);
+
+    --c-silver: oklch(0.85 0.012 80);
+    --c-silver-soft: oklch(0.85 0.012 80 / 0.14);
+    --c-silver-line: oklch(0.85 0.012 80 / 0.5);
+
+    --c-bronze: oklch(0.74 0.11 50);
+    --c-bronze-soft: oklch(0.74 0.11 50 / 0.16);
+    --c-bronze-line: oklch(0.74 0.11 50 / 0.5);
+
+    --c-wash-jade: oklch(0.78 0.12 168 / 0.09);
+    --c-wash-gold: oklch(0.83 0.13 85 / 0.06);
+    --c-row-hover: oklch(0.78 0.12 168 / 0.06);
+
+    --c-side-red: oklch(0.75 0.14 28);
+    --c-side-red-soft: oklch(0.75 0.14 28 / 0.14);
+    --c-side-red-line: oklch(0.75 0.14 28 / 0.5);
+    --c-side-blue: oklch(0.75 0.11 250);
+    --c-side-blue-soft: oklch(0.75 0.11 250 / 0.14);
+    --c-side-blue-line: oklch(0.75 0.11 250 / 0.5);
+  }
+}
+
+/* `inline` keeps the var() reference intact so the media query above still wins.
+   NOTE: opacity modifiers (bg-gold/12) are silently dropped for these colours —
+   use the -soft / -line tokens, which carry their own alpha. */
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-raised: var(--c-raised);
+  --color-inset: var(--c-inset);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-fg: var(--c-fg);
+  --color-muted: var(--c-muted);
+  --color-subtle: var(--c-subtle);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-line: var(--c-accent-line);
+  --color-gold: var(--c-gold);
+  --color-gold-soft: var(--c-gold-soft);
+  --color-gold-line: var(--c-gold-line);
+  --color-silver: var(--c-silver);
+  --color-silver-soft: var(--c-silver-soft);
+  --color-silver-line: var(--c-silver-line);
+  --color-bronze: var(--c-bronze);
+  --color-bronze-soft: var(--c-bronze-soft);
+  --color-bronze-line: var(--c-bronze-line);
+  --color-side-red: var(--c-side-red);
+  --color-side-red-soft: var(--c-side-red-soft);
+  --color-side-red-line: var(--c-side-red-line);
+  --color-side-blue: var(--c-side-blue);
+  --color-side-blue-soft: var(--c-side-blue-soft);
+  --color-side-blue-line: var(--c-side-blue-line);
+}
+
+@theme {
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

@@ -1,0 +1,33 @@
+[package]
+name = "arena-test-entrant"
+version = "1.1.0"
+edition = "2024"
+publish = false
+description = "Test-only Arena entrant: builds the fixtures in arena/test-fixtures/. Never published in a catalog."
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "=0.63.0"
+
+[features]
+# Build the older version (1.0.0), so "A vs an older A" is testable.
+older = []
+# Deliberately broken builds for Arena admission/recovery tests. Never published.
+broken-trap = []
+broken-hang = []
+broken-index = []
+broken-frame-size = []
+broken-no-frame = []
+broken-double-frame = []
+broken-digest = []
+broken-extra-import = []
+# Delay any broken behaviour until revision 2 (passes admission, fails in a match).
+late = []
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"

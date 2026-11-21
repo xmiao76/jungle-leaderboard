@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Byte-exact SDK inputs: the rules digest is SHA-256 over these LF bytes.
+sdk/rules/*.json text eol=lf
+wit/*.wit text eol=lf
+*.wasm binary

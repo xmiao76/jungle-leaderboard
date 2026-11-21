@@ -53,6 +53,43 @@ A single static page whose entire content derives from one data module. The flow
 - Logic lives in `src/lib/` and is unit-tested; `.astro` components have no unit tests and are
   verified through build output instead.
 
+## Arena (`arena/`)
+
+A Vue 3 + Vite app built with `base: './'` into `dist/arena/` after the Astro build (`npm run build`
+runs both). Spec: `arena_prompt.md`. Protocol and replay format: `sdk/README.md`.
+
+- **Separate pages:** leaderboard `/` (Astro), upload `/arena/upload/` (`arena/upload/index.html` →
+  `UploadApp.vue`), Arena setup `/arena/` (`arena/index.html` → `App.vue`) and the full-screen match
+  `/arena/play/` (`arena/play/index.html` → `PlayApp.vue`; config or `?replay=` in the URL, parsed by
+  `parsePlayQuery`). The play page must never scroll: board size is pure CSS in `arena.css`
+  (`.play-root` custom properties); anything new on it goes in the one-row bar or in an overlay
+  (history drawer, toasts), never in the layout flow. Each Arena page declares
+  its root in `<meta name="arena-root">`; build every link, the catalog URL and SDK URLs through
+  `arena/src/app/paths.ts`, never from `document.baseURI`, or the nested page resolves them wrongly.
+  Seat choices persist in localStorage and can be preset with `?left=<sha>&right=<sha>`.
+- **Pure logic is unit-tested; browser modules are not.** `referee/`, `loader/` (except workers),
+  `match/`, `catalog/`, `replay/schema.ts`, `storage/` run under Vitest with fakes
+  (`match/fakes.test-support.ts`). `app/`, `components/`, `audio/`, `conformance/`, canvas code and
+  worker entry points are covered by Playwright (`tests/e2e/`) and the conformance runner. Coverage is
+  enforced at 80 % on the former only (see `vitest.config.ts`).
+- **The contract check compares against `arena/src/loader/canonical-contract.json`**, generated from
+  `wit/jungle.wit`. Regenerate with `UPDATE_CONTRACT=1 npx vitest run arena/src/loader/contract.test.ts`
+  — never edit it by hand. The extractor renders anything it does not model as `unsupported:…`, which
+  can never match; keep it that way rather than "accepting" new forms.
+- **Never pass Vue proxies to `postMessage` or IndexedDB.** Both throw `DataCloneError` on a proxy.
+  Anything that leaves the main thread or is persisted goes through `toRaw()` (entries, replays) or a
+  JSON clone (`persistReplay`). This shipped once and silently dropped every replay into memory.
+- **The match controller serializes all requests per seat (`withSeat`)** and guards every await with
+  `generation`. A new code path that talks to a seat must go through the lock, or a flip or resync
+  will collide with a search. Never start a worker after `dispose()`.
+- **Test entrants** live in `arena/test-fixtures/` (committed; built from `tests/test-entrant/` by
+  `npm run build:fixtures`). `test-entrant-1.1.0`/`-1.0.0` are a small well-behaved program (always
+  plays legal index 0) used by e2e tests as an upload; `broken-*` fail admission; `late-*` pass it and
+  misbehave from revision 2, for forfeit tests. None of them belongs in the public catalog, which holds
+  only real games.
+- Public catalog binaries are committed; add them only with `npm run catalog:add`, which validates,
+  copies and updates `manifest.json`. `npm test` re-hashes every one.
+
 ## Template authoring gotcha
 
 **A newline directly after `{expression}` is dropped, not collapsed to a space.** `{budgetHours}` on
@@ -65,6 +102,9 @@ interpolated copy, grep the built `dist/index.html` for joined words.
 ## Design direction
 
 "Tournament almanac": warm paper, one jade accent, gold/silver/bronze reserved for the podium.
+The Arena shares the tokens (`src/styles/tokens.css`). Its Red/Blue side chips use
+`--c-side-red`/`--c-side-blue` — the single sanctioned exception to the palette, for side identity
+only (contrast measured: tightest 5.79:1). Never use them for any other category.
 Fraunces (display, self-hosted, optical-size axis) over IBM Plex Sans (text). **Light is the default
 theme**; `prefers-color-scheme: dark` is a warm-neutral inversion, not a cool slate.
 

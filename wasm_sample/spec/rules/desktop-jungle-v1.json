@@ -1,0 +1,20 @@
+{
+  "id": "desktop-jungle-v1",
+  "size": [7, 9],
+  "index": "row*7+col; origin top-left",
+  "defaultFirst": "red",
+  "animalsLowToHigh": ["rat", "cat", "dog", "wolf", "leopard", "tiger", "lion", "elephant"],
+  "openingByAscendingRank": {"red": [48,50,54,44,46,56,62,42], "blue": [14,12,8,18,16,6,0,20]},
+  "water": [22,23,25,26,29,30,32,33,36,37,39,40],
+  "den": {"red": 59, "blue": 3},
+  "traps": {"red": [52,58,60], "blue": [2,4,10]},
+  "step": "orthogonal-one; own den and friendly targets forbidden",
+  "jumpWaterLengths": {"lion": [2,3], "tiger": [2]},
+  "jumpBlocking": "any rat on traversed water",
+  "swim": "rat only; captures cannot cross the water boundary in either direction",
+  "trapCapture": "pre-move ranks; enemy trap sets rank to zero; trapped defender capturable by any rank; trapped attacker cannot capture an untrapped defender",
+  "normalCapture": "rat beats elephant; elephant cannot take rat; otherwise attacker rank >= defender rank",
+  "noCapturePlies": 100,
+  "repetition": "no separate adjudication",
+  "terminalOrder": ["den", "elimination", "immobilization", "no-capture"]
+}

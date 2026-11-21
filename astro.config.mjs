@@ -14,5 +14,10 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
 
-  integrations: [sitemap()]
+  // The Arena pages come from a separate Vite build (dist/arena/), so list them explicitly.
+  integrations: [
+    sitemap({
+      customPages: ['https://jungle-leaderboard.pages.dev/arena/', 'https://jungle-leaderboard.pages.dev/arena/upload/'],
+    }),
+  ]
 });

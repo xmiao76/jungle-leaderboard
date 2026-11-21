@@ -1,0 +1,28 @@
+{
+  "format": "jungle-arena-catalog",
+  "version": 1,
+  "entries": [
+    {
+      "sha256": "2aac1b22528b392452d2f81460bcd2b42fca261624cc1b1db619339afe5363c1",
+      "size": 121149,
+      "file": "jungle-claude-opus-5-5-sample-1-0-0-2aac1b22.wasm",
+      "metadata": {
+        "title": "Jungle — Claude-Opus-5.5 sample",
+        "gameVersion": "1.0.0",
+        "model": "Claude-Opus-5.5",
+        "codeAgent": "ClaudeCode",
+        "engineVersion": "jungle-core 1.0.0 (alpha-beta, iterative deepening)",
+        "runtime": "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0",
+        "rulesId": "desktop-jungle-v1",
+        "rulesDigest": "a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63"
+      },
+      "addedAt": "2026-11-21",
+      "provenance": {
+        "language": "Rust",
+        "source": "wasm_sample/crates/jungle-entrant",
+        "toolchain": "rustc 1.94.1, wit-bindgen 0.63.0, jco-transpile 0.24.0 componentNew"
+      },
+      "credits": "Animal artwork: Twemoji (c) Twitter, Inc and other contributors, CC-BY 4.0. Labels rasterized from IBM Plex Sans (SIL OFL 1.1)."
+    }
+  ]
+}

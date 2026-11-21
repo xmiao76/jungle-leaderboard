@@ -1,0 +1,38 @@
+{
+  "animals/rat.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f400.svg",
+    "sha256": "8bfbece3bc1d503247a8f7ba2ea9539534998fdc196b1aab974eef66a1f97a61"
+  },
+  "animals/cat.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f431.svg",
+    "sha256": "a7f61fb700b3a7d3cd6b6839e8574c330fe7baff59f0a964614a2cb324f95abf"
+  },
+  "animals/dog.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f436.svg",
+    "sha256": "52acbb8b0f2d817937b6de1581e298217887e62fb1265055fdcbacae10c669c3"
+  },
+  "animals/wolf.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f43a.svg",
+    "sha256": "4d26cdb3f88ec66e26787a47ca3597c0ad25093aeeac660b8ffa88048b49fc9b"
+  },
+  "animals/leopard.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f406.svg",
+    "sha256": "f7bed20ca8eb7c35fb2f4677b9af3820bd9d5c0341a0dcca339bd9448d0eefa4"
+  },
+  "animals/tiger.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f42f.svg",
+    "sha256": "7a07089eeed2d819b151171845cb6f62f9e601b95c5e4793e7f08fb6a6d9b833"
+  },
+  "animals/lion.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f981.svg",
+    "sha256": "bd269f15a1e303fda5c87a4ff92f3e981a4ed5c4eab175393a73897d714c5f84"
+  },
+  "animals/elephant.svg": {
+    "url": "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/svg/1f418.svg",
+    "sha256": "b23f4d2146dcf07d2dc7fc72d206788581f0ec8c5979a2704ad93d772bc83682"
+  },
+  "fonts/IBMPlexSans-Bold.ttf": {
+    "url": "https://cdn.jsdelivr.net/gh/IBM/plex@v6.4.0/IBM-Plex-Sans/fonts/complete/ttf/IBMPlexSans-Bold.ttf",
+    "sha256": "9e6c74a889a700d707613d24548fe4ffa6bc59559a0689d2cf9e133bdcdafb2f"
+  }
+}

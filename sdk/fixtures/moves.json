@@ -1,0 +1,280 @@
+[
+  {
+    "name": "lion-short",
+    "board": {
+      "0": "blue:rat",
+      "21": "red:lion"
+    },
+    "move": [
+      21,
+      24
+    ],
+    "legal": true
+  },
+  {
+    "name": "lion-long",
+    "board": {
+      "0": "blue:rat",
+      "15": "red:lion"
+    },
+    "move": [
+      15,
+      43
+    ],
+    "legal": true
+  },
+  {
+    "name": "tiger-short",
+    "board": {
+      "0": "blue:rat",
+      "21": "red:tiger"
+    },
+    "move": [
+      21,
+      24
+    ],
+    "legal": true
+  },
+  {
+    "name": "tiger-long",
+    "board": {
+      "0": "blue:rat",
+      "15": "red:tiger"
+    },
+    "move": [
+      15,
+      43
+    ],
+    "legal": false
+  },
+  {
+    "name": "jump-own-rat",
+    "board": {
+      "0": "blue:cat",
+      "15": "red:lion",
+      "29": "red:rat"
+    },
+    "move": [
+      15,
+      43
+    ],
+    "legal": false
+  },
+  {
+    "name": "jump-enemy-rat",
+    "board": {
+      "21": "red:tiger",
+      "23": "blue:rat"
+    },
+    "move": [
+      21,
+      24
+    ],
+    "legal": false
+  },
+  {
+    "name": "jump-capture",
+    "board": {
+      "21": "red:tiger",
+      "24": "blue:dog"
+    },
+    "move": [
+      21,
+      24
+    ],
+    "legal": true
+  },
+  {
+    "name": "jump-stronger",
+    "board": {
+      "21": "red:tiger",
+      "24": "blue:elephant"
+    },
+    "move": [
+      21,
+      24
+    ],
+    "legal": false
+  },
+  {
+    "name": "rat-swims",
+    "board": {
+      "0": "blue:cat",
+      "21": "red:rat"
+    },
+    "move": [
+      21,
+      22
+    ],
+    "legal": true
+  },
+  {
+    "name": "cat-cannot-swim",
+    "board": {
+      "0": "blue:rat",
+      "21": "red:cat"
+    },
+    "move": [
+      21,
+      22
+    ],
+    "legal": false
+  },
+  {
+    "name": "water-to-land",
+    "board": {
+      "21": "blue:elephant",
+      "22": "red:rat"
+    },
+    "move": [
+      22,
+      21
+    ],
+    "legal": false
+  },
+  {
+    "name": "land-to-water",
+    "board": {
+      "21": "red:rat",
+      "22": "blue:rat"
+    },
+    "move": [
+      21,
+      22
+    ],
+    "legal": false
+  },
+  {
+    "name": "water-capture",
+    "board": {
+      "22": "red:rat",
+      "23": "blue:rat"
+    },
+    "move": [
+      22,
+      23
+    ],
+    "legal": true
+  },
+  {
+    "name": "rat-elephant",
+    "board": {
+      "42": "red:rat",
+      "43": "blue:elephant"
+    },
+    "move": [
+      42,
+      43
+    ],
+    "legal": true
+  },
+  {
+    "name": "elephant-rat",
+    "board": {
+      "42": "red:elephant",
+      "43": "blue:rat"
+    },
+    "move": [
+      42,
+      43
+    ],
+    "legal": false
+  },
+  {
+    "name": "equal-rank",
+    "board": {
+      "42": "red:dog",
+      "43": "blue:dog"
+    },
+    "move": [
+      42,
+      43
+    ],
+    "legal": true
+  },
+  {
+    "name": "trapped-elephant",
+    "board": {
+      "51": "red:cat",
+      "52": "blue:elephant"
+    },
+    "move": [
+      51,
+      52
+    ],
+    "legal": true
+  },
+  {
+    "name": "trapped-rat",
+    "board": {
+      "51": "red:elephant",
+      "52": "blue:rat"
+    },
+    "move": [
+      51,
+      52
+    ],
+    "legal": true
+  },
+  {
+    "name": "trapped-attacker",
+    "board": {
+      "10": "red:tiger",
+      "11": "blue:cat"
+    },
+    "move": [
+      10,
+      11
+    ],
+    "legal": false
+  },
+  {
+    "name": "leave-trap-empty",
+    "board": {
+      "0": "blue:cat",
+      "10": "red:tiger"
+    },
+    "move": [
+      10,
+      11
+    ],
+    "legal": true
+  },
+  {
+    "name": "own-den",
+    "board": {
+      "0": "blue:rat",
+      "58": "red:cat"
+    },
+    "move": [
+      58,
+      59
+    ],
+    "legal": false
+  },
+  {
+    "name": "enemy-den",
+    "board": {
+      "0": "blue:rat",
+      "2": "red:cat"
+    },
+    "move": [
+      2,
+      3
+    ],
+    "legal": true
+  },
+  {
+    "name": "friendly-occupied",
+    "board": {
+      "0": "blue:rat",
+      "42": "red:cat",
+      "43": "red:elephant"
+    },
+    "move": [
+      42,
+      43
+    ],
+    "legal": false
+  }
+]

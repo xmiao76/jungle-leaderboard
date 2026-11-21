@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jungle — conformance host</title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+    <style>
+      body { font-family: system-ui, sans-serif; background: #0f1a14; color: #eef3e8; margin: 0; line-height: 1.5; }
+      main { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+      a { color: #f2c14e; }
+      .boards { display: flex; gap: 1rem; flex-wrap: wrap; }
+      figure { margin: 0; }
+      canvas { width: 280px; border-radius: 8px; border: 1px solid #2d4636; display: block; }
+      figcaption { font-size: 0.8rem; color: #b5c4b0; }
+      pre { white-space: pre-wrap; background: #15241c; border: 1px solid #2d4636; border-radius: 10px; padding: 1rem; font-size: 0.8rem; }
+      button { font: inherit; padding: 0.45rem 0.9rem; border-radius: 8px; border: 1px solid #f2c14e; background: #f2c14e; color: #1b1608; font-weight: 600; cursor: pointer; }
+      ol { color: #b5c4b0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Conformance host</h1>
+      <p>
+        Loads the <strong>exact release binary</strong> published with this site, checks its SHA-256, and plays it against the bundled fixture
+        opponent (always legal index 0) under an independent TypeScript referee — once as Red, once as Blue — then replays the official
+        snapshots through both instances with direct seeks and flips. Only <code>display.present</code> is supplied to either component.
+      </p>
+      <p>
+        <button type="button" id="run" data-testid="run">Run with the published release</button>
+        or check another file: <input type="file" id="file" accept=".wasm" aria-label="Release binary to check" />
+      </p>
+      <ol id="log" data-testid="log"></ol>
+      <div class="boards">
+        <figure><canvas id="release" width="448" height="576" aria-label="Release binary's board"></canvas><figcaption>Release (its own renderer)</figcaption></figure>
+        <figure><canvas id="fixture" width="448" height="576" aria-label="Fixture opponent's board"></canvas><figcaption>Fixture opponent (its own renderer)</figcaption></figure>
+      </div>
+      <pre id="result" data-status="idle" data-testid="result"></pre>
+      <p><a href="../">Back to the game</a></p>
+    </main>
+    <script type="module" src="../src/host/main.ts"></script>
+  </body>
+</html>

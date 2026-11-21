@@ -1,0 +1,19 @@
+[package]
+name = "jungle-entrant"
+description = "The Arena entrant: jungle-core behind the jungle:arena/competitor@1.0.0 world."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+jungle-core = { path = "../jungle-core" }
+wit-bindgen.workspace = true
+
+[features]
+# Test-only build: also exports a rules interface for cross-build parity tests.
+# The release binary never has it, so the release WIT stays exactly the contract.
+test-exports = []

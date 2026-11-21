@@ -1,0 +1,31 @@
+//! Jungle core: rules, search and renderer shared by the standalone web game
+//! (`jungle-web`) and the Arena entrant (`jungle-entrant`). Nothing here knows about
+//! a binding layer, so both builds make identical decisions and draw identical boards.
+
+pub mod atlas;
+pub mod render;
+pub mod rules;
+pub mod search;
+pub mod types;
+
+pub use types::*;
+
+/// Identity reported by `info()` and shown in the standalone menu.
+pub mod identity {
+    pub const TITLE: &str = "Jungle — Claude-Opus-5.5 sample";
+    pub const GAME_VERSION: &str = "1.0.0";
+    pub const MODEL: &str = "Claude-Opus-5.5";
+    pub const CODE_AGENT: &str = "ClaudeCode";
+    pub const ENGINE_VERSION: &str = "jungle-core 1.0.0 (alpha-beta, iterative deepening)";
+    pub const RUNTIME: &str = "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0";
+}
+
+/// Default node budgets for the standalone difficulty levels. Arena games use the
+/// host's budget instead.
+pub fn standalone_budget(level: Level) -> u32 {
+    match level {
+        Level::Easy => 2_000,
+        Level::Medium => 30_000,
+        Level::Hard => 300_000,
+    }
+}

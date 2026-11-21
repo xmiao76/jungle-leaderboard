@@ -1,0 +1,56 @@
+package jungle:arena@1.0.0;
+
+interface display {
+    /// Submit one RGBA8 frame in top-to-bottom row order.
+    present: func(width: u16, height: u16, rgba: list<u8>);
+}
+
+interface game {
+    enum side { red, blue }
+    enum animal { rat, cat, dog, wolf, leopard, tiger, lion, elephant }
+    enum level { easy, medium, hard }
+    enum phase { playing, won, drawn, forfeited }
+
+    record metadata {
+        title: string,
+        game-version: string,
+        model: string,
+        code-agent: string,
+        engine-version: string,
+        runtime: string,
+        rules-id: string,
+        rules-digest: string,
+    }
+    record settings {
+        seat: side,
+        difficulty: level,
+        seed: u32,
+    }
+    record piece { owner: side, kind: animal }
+    record ply-move { src: u8, dst: u8 }
+    record snapshot {
+        rev: u32,
+        board: list<option<piece>>,
+        first-side: side,
+        to-play: side,
+        history: list<ply-move>,
+        no-capture-plies: u32,
+        status: phase,
+        winner: option<side>,
+        reason: string,
+    }
+
+    /// Available before init, for discovery by the host.
+    info: func() -> metadata;
+    /// Called once on a fresh instance at the start of its match.
+    init: func(config: settings);
+    /// Return the zero-based index in this call's legal list.
+    choose-move: func(state: snapshot, legal: list<ply-move>, node-budget: u32) -> u32;
+    /// Present one frame showing this revision from the requested perspective.
+    render: func(state: snapshot, flipped: bool, progress: u16);
+}
+
+world competitor {
+    import display;
+    export game;
+}

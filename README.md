@@ -78,19 +78,131 @@ outcome.
 
 ---
 
+## Jungle Arena
+
+Upload independently built Jungle programs, compiled to WebAssembly Components, and watch two of
+them play on two live boards, each drawn by its own program, under one Arena-owned referee.
+Everything runs in the browser; no server computes a move. The site has separate pages, linked by
+the same nav (Leaderboard · Upload · Arena):
+
+| Page | Path | What it does |
+|---|---|---|
+| Leaderboard | [`/`](https://jungle-leaderboard.pages.dev/) | The benchmark standings (this README's Results). |
+| Upload | [`/arena/upload/`](https://jungle-leaderboard.pages.dev/arena/upload/) | Import a `.wasm`, watch each check run, see your uploads and the public catalog, remove uploads. |
+| Arena setup | [`/arena/`](https://jungle-leaderboard.pages.dev/arena/) | Pick a program and version for each seat and the match settings, then **Start**; saved replays. |
+| Arena play | `/arena/play/?…` | Full screen, no scrolling: the two boards as large as the window allows, one slim control bar. Also plays back replays. |
+
+The Arena was built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in [`arena_prompt.md`](arena_prompt.md).
+
+### Using it
+
+1. On **Upload**, choose **Import .wasm**. Each check is shown as it runs, then the program's model,
+   code agent, version, runtime and rules compatibility, and two frames it drew. **Play in left/right
+   seat** opens the Arena with it selected (seat choices are remembered across pages).
+   On the **Arena** setup page, pick a program and an exact version (each build is identified by its
+   SHA-256) for each seat. A link of the form `/arena/?left=<sha256>&right=<sha256>` preselects both.
+2. Choose which column plays Red, who moves first, difficulty, seed, the shared node budget, the think
+   deadline and the animation speed, then **Start match**. A vs B, A vs an older A, and the same binary
+   in both seats all work.
+3. The match opens on its own full-screen page: the two boards split the window left and right
+   (stacked on portrait screens), each with a one-line label of seat, side, program, version and model.
+   One bar holds turn, move, state, last move and result, plus play/pause, step, speed, restart,
+   **Swap** (rematch with colours exchanged), mute, **History** (an overlay drawer with the full move
+   list) and **Full screen**. Keys: Space play/pause, S step, H history, M mute. The page URL holds
+   every setting, so it can be shared, and reloading restarts the same match (same seed).
+4. Every committed ply is saved before the game moves on. Replays survive a reload, can be downloaded,
+   and reopen on another device with the original programs (or a labeled reference board). **Open**
+   plays a replay back on the same full-screen page, with a seek bar.
+
+### Two catalogs
+
+- **On this device** — files you import. They are validated, then saved in this browser's IndexedDB
+  by content hash and immediately usable. Identical bytes reuse the entry; a new hash is a new entry
+  even if the title and version are unchanged. Nothing is uploaded anywhere.
+- **Public catalog** — binaries committed under [`arena/public/catalog/`](arena/public/catalog/) and
+  listed with their hashes in `manifest.json`. A maintainer adds one with
+  `npm run catalog:add -- path/to/file.wasm` (the same checks a browser import runs, plus a smoke test
+  in a killable child process); it goes live with the next `npm run deploy`. Every download is
+  verified against its manifest hash. `npm test` re-verifies every catalog file.
+
+A shared catalog where any visitor's upload is published instantly would need a storage service
+beyond this static site, so it is deliberately out of scope.
+
+Current public entry: the **Jungle — Claude-Opus-5.5 sample** 1.0.0, built in
+[`wasm_sample/`](wasm_sample/) (animal art: Twemoji, CC-BY 4.0); its hash and size are in
+`manifest.json`. Any other program is played by uploading it.
+
+### How it works
+
+| Module | Responsibility |
+|---|---|
+| `arena/src/referee/` | The trusted referee: board, legal moves sorted by `(src, dst)`, captures, history, quiet counter, adjudication, forfeits. Tested against every case in the brief. |
+| `arena/src/loader/` | Admission: size and header checks, SHA-256, the **contract check** (the component's imports and exports, with fully expanded types, must equal a component built from `wit/jungle.wit`), jco transpilation, and the disposable smoke test. |
+| `arena/src/match/` | The match controller: one fresh worker per seat plus an isolated referee worker, request correlation, deadlines, pause/step/restart, forfeits, display failures and resync. |
+| `arena/src/workers/` | The loader, seat and referee workers, and the main-thread handles that enforce deadlines by terminating them. |
+| `arena/src/storage/`, `catalog/`, `replay/` | IndexedDB (with an in-memory fallback that says so), both catalogs, replay recording, validation and playback. |
+| `arena/src/components/`, `app/` | The Vue 3 interface: `App.vue` (setup, `index.html`), `PlayApp.vue` (full-screen play, `play/index.html`) and `UploadApp.vue` (upload, `upload/index.html`). |
+
+The wire protocol, deadlines, failure handling and replay format are documented in
+[`sdk/README.md`](sdk/README.md), with the WIT, rules profile and fixtures beside it.
+
+**Limits** (equal for both seats, shown in the UI): 24 MiB per upload, 20 s to load, 5 s per move by
+default (1–30 s selectable), 2 s per frame. A timeout, trap or out-of-range index forfeits; a drawing
+failure only marks that board.
+
+**Browsers.** Chrome, Edge and Safari-class WebKit are verified (see the test record). Firefox
+support is implemented with the same code paths but could not be exercised on the build machine.
+
+### Test record — local runs
+
+Run on Windows 10 with Node 26.13.1 against the production build served from a nested subpath
+(`/nested/static/path/`). Recorded on 2026-11-21.
+
+| Suite | Command | Result |
+|---|---|---|
+| Referee, loader, contract, controller, storage, catalog, replay, leaderboard logic | `npm test` | 186 tests pass; Arena logic coverage 86 % statements / 91 % lines (threshold 80 %) |
+| Page navigation, full-screen layout (no scroll at 1920×1080, 1366×768, 1280×720 and portrait), upload, admission, matches, recovery, replay-after-reload in real browsers | `npm run test:e2e` | 115 of 116 runs pass, none fail: 29/29 in Chromium 159, installed Chrome and Edge; 28/28 in WebKit (Safari engine), where the Chromium-only evidence capture is skipped |
+| Conformance runner | `npm run conformance -- <file>` | The sample and the test entrant **pass**; `late-index` **fails** (forfeits); `broken-extra-import` is **rejected** at the contract stage |
+
+Firefox: Playwright's Firefox build could not launch on the test machine (the Visual C++ 2015–2022
+runtime, `msvcp140_1.dll`, is not installed) and desktop Firefox is not installed — so Firefox is
+**unverified**, not failed. Real Safari is unavailable on Windows; WebKit stands in for it.
+
+### Test record — public verification
+
+Pending the next deployment (`npm run deploy`). After it: open the public URL, upload a program,
+play it against the public sample, swap sides, reopen its replay, and run
+`npm run conformance -- <file> --url https://jungle-leaderboard.pages.dev/arena/`.
+
+---
+
 ## Development
 
 Requires Node 22.12 or newer; `.nvmrc` pins 24 for reproducible builds.
 
 ```bash
 npm install
-npm run dev        # dev server at http://localhost:4321
-npm run build      # type-check, then build static output to dist/
-npm run preview    # serve the built output locally
-npm run check      # astro check (types + template diagnostics) on its own
-npm test           # run the Vitest suite once
+npm run dev        # leaderboard dev server at http://localhost:4321
+npm run dev:arena  # Arena dev server at http://localhost:4322
+npm run build      # rules digest check, type-checks, then leaderboard + Arena into dist/
+npm run preview    # serve dist/ at http://127.0.0.1:4400/ (Arena at /arena/)
+npm run check      # astro check + vue-tsc on their own
+npm test           # Vitest: leaderboard, referee, loader, controller, storage, catalog, replay
+npm run test:coverage
+npm run test:e2e   # Playwright against dist/ served from a nested subpath (build first)
 npm run test:watch # re-run tests on change
 ```
+
+Arena test fixtures and the public catalog:
+
+```bash
+npm run build:fixtures                   # rebuild arena/test-fixtures/ from tests/test-entrant/ (needs Rust 1.94 + wasm32-unknown-unknown)
+npm run catalog:add -- path/to/file.wasm # admit a binary to the public catalog
+npm run catalog:verify                   # every catalog file matches its manifest hash and the contract
+npm run conformance -- path/to/file.wasm [--browser chromium|webkit|chrome|msedge|firefox] [--url <deployed arena>]
+```
+
+The browser tests need Playwright's browsers once: `npx playwright install chromium webkit firefox`.
 
 Run a single test file or a single case:
 
@@ -113,7 +225,19 @@ src/
   components/           Presentational Astro components
   layouts/BaseLayout    <head>, metadata, JSON-LD, skip link
   pages/index.astro     Composes the page; validates data at build time
-  styles/global.css     Design tokens, base styles, responsive table rules
+  styles/tokens.css     Design tokens shared with the Arena
+  styles/global.css     Base styles, responsive table rules
+arena/                  The Arena: Vue 3 + Vite app built to dist/arena/ (base './')
+  src/                  referee, loader, match, workers, storage, catalog, replay, components
+  public/catalog/       The public catalog: binaries + manifest.json
+  test-fixtures/        Test-only components: a small well-behaved entrant and deliberately broken ones
+wit/jungle.wit          The Arena contract (verbatim from the brief)
+sdk/                    Rules profile, fixtures and protocol documentation
+scripts/                Build, catalog, conformance and static-server tools
+tests/e2e/              Playwright suites
+tests/test-entrant/     Rust source of the test fixtures (never published in a catalog)
+wasm_sample/            The standalone game and its Arena entrant (a self-contained project)
+arena_prompt.md         The Arena brief
 ```
 
 Tests cover the logic layer. The components are verified through the build: `npm run build` fails on
@@ -141,7 +265,9 @@ npm run deploy
 ```
 
 That runs the test suite and a type-checked build before uploading, so a malformed data edit cannot
-reach production. It needs a Cloudflare session — run `npx wrangler login` once if
+reach production. The upload contains both the leaderboard and the Arena (`dist/arena/`, including
+the public catalog binaries and jco's ~8 MB of transpiler WebAssembly, every file under Pages'
+25 MiB limit). It needs a Cloudflare session — run `npx wrangler login` once if
 `npx wrangler whoami` reports you are not logged in.
 
 A Direct Upload project cannot later be switched to Git integration; Cloudflare fixes that choice

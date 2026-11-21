@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jungle — a Claude-Opus-5.5 sample game</title>
+    <meta name="description" content="Play Jungle (Dou Shou Qi) against a WebAssembly AI, and download the same engine as a single-file Arena entrant." />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  </head>
+  <body>
+    <div id="loading" class="loading" role="status" aria-live="polite">
+      <p class="loading-title">Jungle</p>
+      <p class="loading-stage" id="loading-stage">Loading the engine…</p>
+      <div class="bar" aria-hidden="true"><div class="bar-fill" id="loading-fill"></div></div>
+      <p class="loading-detail" id="loading-detail"></p>
+    </div>
+
+    <div id="app" class="app" hidden>
+      <header class="top">
+        <div>
+          <h1>Jungle <span class="zh" lang="zh">斗兽棋</span></h1>
+          <p class="byline" id="byline"></p>
+        </div>
+        <nav class="top-nav" aria-label="Game">
+          <button type="button" class="btn primary" id="btn-new">New game</button>
+          <a class="btn" href="#how-to-play">How to play</a>
+          <a class="btn" href="#arena">Download Arena .wasm</a>
+        </nav>
+      </header>
+
+      <main class="layout">
+        <section class="board-col" aria-label="Board">
+          <div class="board-frame">
+            <canvas id="board" width="448" height="576" tabindex="0" role="img" aria-label="Jungle board" data-testid="board"></canvas>
+            <div id="cursor" class="cursor" aria-hidden="true"></div>
+          </div>
+          <p class="hint">Click a piece, then a highlighted square. Keyboard: arrows to move the cursor, Enter to select and move.</p>
+        </section>
+
+        <aside class="panel">
+          <section class="card status-card" aria-label="Game status">
+            <p class="turn" id="turn" data-testid="turn"></p>
+            <p class="message" id="message" aria-live="polite" data-testid="message"></p>
+            <p class="ai-status" id="ai-status" data-testid="ai-status"></p>
+          </section>
+          <section class="card controls" aria-label="Controls">
+            <button type="button" class="btn" id="btn-undo" data-testid="undo">Undo</button>
+            <button type="button" class="btn" id="btn-flip" aria-pressed="false" data-testid="flip">Flip board</button>
+            <button type="button" class="btn" id="btn-pause" hidden data-testid="pause">Pause</button>
+            <button type="button" class="btn" id="btn-mute" aria-pressed="false" data-testid="mute">Mute</button>
+            <button type="button" class="btn" id="btn-restart" data-testid="restart">Restart</button>
+          </section>
+          <section class="card" aria-labelledby="history-title">
+            <h2 id="history-title">Moves</h2>
+            <ol class="history" id="history" data-testid="history"></ol>
+          </section>
+        </aside>
+      </main>
+
+      <dialog id="menu" class="menu" aria-labelledby="menu-title">
+        <form method="dialog" id="menu-form">
+          <h2 id="menu-title">New game</h2>
+          <fieldset>
+            <legend>Mode</legend>
+            <label><input type="radio" name="mode" value="human-ai" checked /> Human vs AI</label>
+            <label><input type="radio" name="mode" value="ai-ai" data-testid="mode-ai-ai" /> AI vs AI</label>
+          </fieldset>
+          <fieldset>
+            <legend>Difficulty</legend>
+            <label><input type="radio" name="level" value="0" /> Easy</label>
+            <label><input type="radio" name="level" value="1" checked /> Medium</label>
+            <label><input type="radio" name="level" value="2" data-testid="level-hard" /> Hard</label>
+          </fieldset>
+          <fieldset id="first-human">
+            <legend>Who moves first</legend>
+            <label><input type="radio" name="first" value="human" checked /> I move first</label>
+            <label><input type="radio" name="first" value="ai" data-testid="ai-first" /> The AI moves first</label>
+            <label class="side-pick">Play as
+              <select name="side" data-testid="human-side"><option value="0">Red</option><option value="1">Blue</option></select>
+            </label>
+          </fieldset>
+          <fieldset id="first-ai" hidden>
+            <legend>Who moves first</legend>
+            <label><input type="radio" name="firstSide" value="0" checked /> Red</label>
+            <label><input type="radio" name="firstSide" value="1" /> Blue</label>
+          </fieldset>
+          <div class="identity" id="identity" data-testid="identity"></div>
+          <div class="menu-actions">
+            <button type="submit" class="btn primary" value="start" data-testid="start">Start</button>
+            <button type="submit" class="btn" value="cancel" formnovalidate>Cancel</button>
+          </div>
+        </form>
+      </dialog>
+
+      <section class="prose" id="how-to-play" aria-labelledby="htp-title">
+        <h2 id="htp-title">How to play</h2>
+        <div class="columns">
+          <div>
+            <h3>Winning</h3>
+            <p>Move any piece into your opponent’s <strong>den</strong>, or capture every enemy piece. A player with <strong>no legal move</strong> loses. After <strong>100 plies without a capture</strong> the game is a draw.</p>
+            <h3>Ranks</h3>
+            <p>Rat 1 · Cat 2 · Dog 3 · Wolf 4 · Leopard 5 · Tiger 6 · Lion 7 · Elephant 8. A piece captures an enemy of equal or lower rank — except that the <strong>rat captures the elephant</strong>, and the <strong>elephant cannot capture the rat</strong>.</p>
+            <h3>Moving</h3>
+            <p>Each turn, move one piece one square up, down, left or right. You may not enter your <strong>own den</strong> or a square holding your own piece.</p>
+          </div>
+          <div>
+            <h3>Rivers</h3>
+            <p>Only the <strong>rat swims</strong>. A rat cannot capture across the river bank in either direction, but may capture another rat in the water.</p>
+            <p>The <strong>lion</strong> jumps straight over 2 or 3 water squares, the <strong>tiger</strong> over exactly 2 — and a <strong>rat of either colour</strong> on any of those squares blocks the jump.</p>
+            <h3>Traps</h3>
+            <p>A piece standing on one of its <strong>opponent’s traps</strong> has rank zero: any enemy can take it. Your own traps don’t weaken you.</p>
+          </div>
+          <div>
+            <h3>Controls</h3>
+            <p>Click a piece to select it (gold ring). Dark dots mark squares it can move to; red rings mark captures. Click a target to move, or another piece to change your selection.</p>
+            <p><strong>Undo</strong> returns to your previous turn (in AI vs AI, one move while paused). <strong>Flip</strong> turns the board around. <strong>Mute</strong> silences the sounds.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="prose" id="arena" aria-labelledby="arena-title">
+        <h2 id="arena-title">Download Arena .wasm</h2>
+        <p>The engine and board you are playing are also published as one self-contained WebAssembly Component — the same strategy and the same artwork — for the <a href="https://jungle-leaderboard.pages.dev/arena/">Jungle Arena</a>.</p>
+        <div class="release card" id="release" data-testid="release"></div>
+        <ol>
+          <li>Download the file below. It is the only file the Arena needs.</li>
+          <li>Open the Jungle Arena and choose <strong>Import .wasm</strong>. The Arena checks it and saves it on your device.</li>
+          <li>Pick it in either seat and start a match. The Arena referees; this program chooses its own moves and draws its own board.</li>
+        </ol>
+        <p class="small">Documentation: <a href="release/jungle.wit">WIT contract</a> · <a href="release/embedded.wit">WIT embedded in the binary</a> · <a href="release/types/jungle-opus55.d.ts">generated TypeScript types</a> · <a href="release/desktop-jungle-v1.json">rules profile</a> · <a href="release/release.json">release manifest</a> · <a href="host/">conformance host</a></p>
+      </section>
+
+      <footer class="footer">
+        <p>Built by Claude-Opus-5.5 with ClaudeCode. Animal artwork: <a href="https://github.com/jdecked/twemoji">Twemoji</a> © Twitter, Inc and other contributors, licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY 4.0</a>. Labels set in IBM Plex Sans (SIL OFL 1.1). Tiles and sounds are original.</p>
+      </footer>
+    </div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

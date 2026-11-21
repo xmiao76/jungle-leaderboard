@@ -1,0 +1,532 @@
+/**
+ * Application state and actions. Vue components read `state` and call the exported
+ * actions; workers, the controller and storage live outside reactivity.
+ */
+import { reactive, toRaw, watch } from 'vue';
+import { MatchAudio } from '../audio/sfx';
+import { fetchPublicBinary, fetchPublicManifest, groupByTitle, mergeCatalog, type CatalogEntry, type CatalogGroup } from '../catalog/catalog';
+import type { Frame } from '../loader/frame';
+import { sha256Hex } from '../loader/hash';
+import { importBinary, type ImportOutcome, type ImportStage } from '../loader/import-service';
+import { DEADLINES, DEFAULT_NODE_BUDGET, LOADER_VERSION, MAX_UPLOAD_BYTES } from '../loader/limits';
+import { MatchController, type AnimationPlan, type MatchEntrant, type MatchView } from '../match/controller';
+import { SEATS, type Seat } from '../protocol/messages';
+import { initialSnapshot, RULES_DIGEST, RULES_ID } from '../referee';
+import { opponent, type Level, type Side } from '../referee/types';
+import { REPLAY_FORMAT, withPly, withResult, type ReplayV1 } from '../replay/schema';
+import { MemoryStore, openArenaStore, ResilientStore, type ArenaStore } from '../storage/db';
+import { createLoaderWorker, createRefereeWorker, createSeatWorker } from '../workers/factories';
+import { arenaUrl, catalogBase, parsePlayQuery, playUrl, selectionFromQuery, type PlayConfig, type Speed } from './paths';
+import { LoaderClient, realClock } from '../workers/rpc';
+
+export const ARENA_VERSION = '1.0.0';
+
+export type { Speed } from './paths';
+export const SPEEDS: Readonly<Record<Speed, AnimationPlan>> = {
+  slow: { steps: [200, 400, 600, 800], pauseMs: 900 },
+  normal: { steps: [333, 667], pauseMs: 350 },
+  fast: { steps: [], pauseMs: 0 },
+};
+
+export interface Notice {
+  readonly id: number;
+  readonly tone: 'error' | 'warning' | 'info';
+  readonly title: string;
+  readonly body: string;
+}
+
+export interface ArenaState {
+  booted: boolean;
+  storageNotice: string | null;
+  catalogError: string | null;
+  entries: CatalogEntry[];
+  selection: Record<Seat, string | null>;
+  settings: {
+    leftSide: Side;
+    firstSide: Side;
+    difficulty: Level;
+    seed: number;
+    nodeBudget: number;
+    thinkDeadlineMs: number;
+    speed: Speed;
+    beginPaused: boolean;
+  };
+  preparing: Record<Seat, string | null>;
+  match: MatchView | null;
+  matchEntrants: Record<Seat, CatalogEntry> | null;
+  matchSides: Record<Seat, Side> | null;
+  replayId: string | null;
+  notices: Notice[];
+  muted: boolean;
+  announcement: string;
+  replays: ReplayV1[];
+  /** On the play page: the replay being played back instead of a live match. */
+  viewReplay: ReplayV1 | null;
+}
+
+const audio = new MatchAudio();
+const prefersReducedMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+export const state: ArenaState = reactive({
+  booted: false,
+  storageNotice: null,
+  catalogError: null,
+  entries: [],
+  selection: { left: null, right: null },
+  settings: {
+    leftSide: 'red',
+    firstSide: 'red',
+    difficulty: 'medium',
+    seed: randomSeed(),
+    nodeBudget: DEFAULT_NODE_BUDGET,
+    thinkDeadlineMs: DEADLINES.think,
+    speed: 'normal',
+    beginPaused: false,
+  },
+  preparing: { left: null, right: null },
+  match: null,
+  matchEntrants: null,
+  matchSides: null,
+  replayId: null,
+  notices: [],
+  muted: audio.muted,
+  announcement: '',
+  replays: [],
+  viewReplay: null,
+}) as ArenaState;
+
+/** Replaced by the IndexedDB-backed store in boot(); memory until then. */
+let store: ArenaStore = new ResilientStore(new MemoryStore());
+let controller: MatchController | null = null;
+let replay: ReplayV1 | null = null;
+let noticeId = 0;
+const loader = new LoaderClient(createLoaderWorker);
+
+// ---- Frame presentation -----------------------------------------------------------------
+
+/** Draws one frame on a pane; `rev` is the revision the frame shows. */
+type Presenter = (frame: Frame, rev: number) => void;
+const presenters: Record<Seat, Presenter | null> = { left: null, right: null };
+
+/** PlayBoard registers how to draw on its canvas. */
+export function registerPresenter(seat: Seat, presenter: Presenter | null): void {
+  presenters[seat] = presenter;
+}
+
+/** Both settled frames are staged and presented in one animation callback. */
+function presentSettled(frames: Readonly<Record<Seat, Frame | null>>, rev: number): void {
+  requestAnimationFrame(() => {
+    for (const seat of SEATS) {
+      const frame = frames[seat];
+      if (frame) presenters[seat]?.(frame, rev);
+    }
+  });
+}
+
+// ---- Notices ----------------------------------------------------------------------------
+
+export function notify(tone: Notice['tone'], title: string, body: string): void {
+  state.notices.push({ id: ++noticeId, tone, title, body });
+}
+
+export function dismissNotice(id: number): void {
+  state.notices = state.notices.filter((n) => n.id !== id);
+}
+
+// ---- Boot and catalog -----------------------------------------------------------------------
+
+export function randomSeed(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0]!;
+}
+
+export const groups = (): CatalogGroup[] => groupByTitle(state.entries);
+export const entryByHash = (sha256: string | null) => state.entries.find((e) => e.sha256 === sha256) ?? null;
+
+export async function refreshCatalog(): Promise<void> {
+  const [publicCatalog, device] = await Promise.all([fetchPublicManifest(catalogBase()), store.listPackages()]);
+  state.catalogError = publicCatalog.error;
+  state.entries = mergeCatalog(publicCatalog.entries, device);
+  for (const seat of SEATS) {
+    if (state.selection[seat] && !entryByHash(state.selection[seat])) state.selection[seat] = null;
+  }
+}
+
+export async function boot(): Promise<void> {
+  store = new ResilientStore(await openArenaStore());
+  state.storageNotice = store.unavailableReason;
+  await refreshCatalog();
+  // Seat choices: a shareable ?left=&right= link first, then what this viewer picked last
+  // (on either page), then the first two public programs.
+  const fromQuery = selectionFromQuery();
+  const stored = loadStoredSelection();
+  for (const seat of SEATS) {
+    const wanted = fromQuery[seat] ?? stored[seat];
+    if (wanted && entryByHash(wanted)) state.selection[seat] = wanted;
+    else if (fromQuery[seat]) {
+      notify('warning', 'That link names a program this browser does not have', `The ${seat} seat's program (${fromQuery[seat]!.slice(0, 12)}…) is not in the public catalog or on this device. Upload it first.`);
+    }
+  }
+  const g = groups();
+  state.selection.left ??= g[0]?.versions[0]?.sha256 ?? null;
+  state.selection.right ??= (g[1] ?? g[0])?.versions[0]?.sha256 ?? null;
+  watch(() => ({ ...state.selection }), saveSelection);
+  saveSelection();
+  state.replays = await store.listReplays();
+  state.booted = true;
+}
+
+// ---- Import ---------------------------------------------------------------------------------
+
+export interface ImportResult {
+  readonly outcome: ImportOutcome;
+  readonly reused: boolean;
+}
+
+export async function importFile(file: File, onStage: (stage: ImportStage) => void): Promise<ImportResult> {
+  // Refuse oversized files before reading them into memory at all.
+  if (file.size > MAX_UPLOAD_BYTES) {
+    onStage('size');
+    const reason = `The file is ${(file.size / 1048576).toFixed(1)} MiB; the limit is ${MAX_UPLOAD_BYTES / 1048576} MiB.`;
+    return { outcome: { ok: false, stage: 'size', sha256: null, reasons: [reason], metadata: null }, reused: false };
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const outcome = await importBinary(bytes, {
+    loader,
+    seatFactory: createSeatWorker,
+    onStage,
+    cachedArtifact: async (sha) => store.getTranspiled(sha, LOADER_VERSION),
+  });
+  if (!outcome.ok) return { outcome, reused: false };
+  const existing = await store.getPackage(outcome.sha256);
+  if (!existing) {
+    await store.putPackage({ sha256: outcome.sha256, size: outcome.size, fileName: file.name, metadata: outcome.metadata, importedAt: new Date().toISOString(), bytes });
+  }
+  await store.putTranspiled(outcome.sha256, LOADER_VERSION, outcome.artifact);
+  state.storageNotice = store.unavailableReason;
+  await refreshCatalog();
+  return { outcome, reused: existing !== null };
+}
+
+// ---- Seat selection across pages -----------------------------------------------------------
+
+const SELECTION_KEY = 'jungle-arena:selection';
+
+function loadStoredSelection(): Partial<Record<Seat, string>> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SELECTION_KEY) ?? '{}') as Partial<Record<Seat, unknown>>;
+    const out: Partial<Record<Seat, string>> = {};
+    for (const seat of SEATS) if (typeof parsed[seat] === 'string') out[seat] = parsed[seat] as string;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** A per-viewer convenience: the page still works when storage is blocked. */
+function saveSelection(): void {
+  try {
+    localStorage.setItem(SELECTION_KEY, JSON.stringify(toRaw(state.selection)));
+  } catch {
+    // storage blocked: the choice lasts for this page only
+  }
+}
+
+/** From the upload page: put a program in a seat and go to the Arena to play it. */
+export function useInSeat(seat: Seat, sha256: string): void {
+  state.selection[seat] = sha256;
+  saveSelection();
+  location.assign(arenaUrl({ [seat]: sha256 }));
+}
+
+/** Entries stored in this browser, newest first (upload page). */
+export const deviceEntries = () => state.entries.filter((e) => e.onDevice).sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+export const publicEntries = () => state.entries.filter((e) => e.origin === 'public');
+
+export async function forgetDeviceEntry(sha256: string): Promise<void> {
+  await store.deletePackage(sha256);
+  await refreshCatalog();
+}
+
+// ---- Preparing entrants ---------------------------------------------------------------------
+
+async function entrantBytes(entry: CatalogEntry): Promise<Uint8Array> {
+  if (entry.origin === 'device' || entry.onDevice) {
+    const stored = await store.getPackage(entry.sha256);
+    if (stored) {
+      // Reopening an entry: the stored bytes must still be the bytes that were admitted.
+      const actual = await sha256Hex(stored.bytes);
+      if (actual !== entry.sha256) throw new Error(`The stored copy of ${entry.metadata.title} no longer matches its hash; re-import it.`);
+      return stored.bytes;
+    }
+  }
+  if (entry.file) return fetchPublicBinary({ file: entry.file, sha256: entry.sha256 }, catalogBase());
+  throw new Error(`${entry.metadata.title} is not available on this device any more.`);
+}
+
+export async function prepareEntrant(entry: CatalogEntry, onStatus: (text: string) => void = () => {}): Promise<MatchEntrant> {
+  const cached = await store.getTranspiled(entry.sha256, LOADER_VERSION);
+  if (cached) {
+    // Reopening a stored entry re-proves its bytes even when the transpile cache hits.
+    if (entry.origin === 'device' || entry.onDevice) await entrantBytes(entry);
+    return { sha256: entry.sha256, metadata: entry.metadata, artifact: { js: cached.js, modules: cached.modules } };
+  }
+  onStatus('Downloading and verifying…');
+  const bytes = await entrantBytes(entry);
+  onStatus('Validating and transpiling…');
+  const reply = await loader.validate(bytes.slice().buffer as ArrayBuffer, {
+    skipTranspile: false,
+    onProgress: (stage) => onStatus(`Loader: ${stage}…`),
+    validateDeadlineMs: DEADLINES.validate,
+    transpileDeadlineMs: DEADLINES.transpile,
+  });
+  if (reply.type === 'REJECTED') throw new Error(`${entry.metadata.title} failed admission at ${reply.stage}: ${reply.reasons.join(' ')}`);
+  if (reply.sha256 !== entry.sha256) throw new Error(`${entry.metadata.title} changed: its bytes hash to ${reply.sha256.slice(0, 12)}….`);
+  const artifact = reply.artifact!;
+  await store.putTranspiled(entry.sha256, LOADER_VERSION, artifact);
+  return { sha256: entry.sha256, metadata: entry.metadata, artifact };
+}
+
+// ---- Matches --------------------------------------------------------------------------------
+
+function newId(): string {
+  return `${Date.now().toString(36)}-${randomSeed().toString(36)}`;
+}
+
+/**
+ * Persist before the match advances. The record is cloned to plain JSON data first:
+ * IndexedDB cannot store Vue proxies, and a DataCloneError here once silently pushed
+ * every replay into memory-only storage (regression test: e2e replay-after-reload).
+ */
+async function persistReplay(next: ReplayV1): Promise<void> {
+  replay = JSON.parse(JSON.stringify(next)) as ReplayV1;
+  await store.putReplay(replay);
+  if (!store.persistent && state.storageNotice !== store.unavailableReason) {
+    state.storageNotice = store.unavailableReason;
+    notify('warning', 'Replay kept in memory only', `${store.unavailableReason ?? ''} Download the replay before leaving this page.`);
+  }
+}
+
+function describeMove(rev: number, seat: Seat, side: Side, src: number, dst: number, captured: boolean): string {
+  return `Move ${rev}: ${side} (${seat} seat) ${src} to ${dst}${captured ? ', capture' : ''}.`;
+}
+
+export async function startMatch(): Promise<void> {
+  audio.unlock();
+  // Raw objects: these end up in worker messages and IndexedDB, which cannot take proxies.
+  const leftEntry = entryByHash(state.selection.left);
+  const rightEntry = entryByHash(state.selection.right);
+  const left = leftEntry ? toRaw(leftEntry) : null;
+  const right = rightEntry ? toRaw(rightEntry) : null;
+  if (!left || !right) {
+    notify('warning', 'Pick two entrants', 'Choose a version in each column before starting.');
+    return;
+  }
+  stopMatch();
+  const sides: Record<Seat, Side> = { left: state.settings.leftSide, right: opponent(state.settings.leftSide) };
+  state.matchEntrants = { left, right };
+  state.matchSides = sides;
+  state.match = null;
+
+  let entrants: Record<Seat, MatchEntrant>;
+  try {
+    const [l, r] = await Promise.all(
+      (['left', 'right'] as const).map((seat) =>
+        prepareEntrant(seat === 'left' ? left : right, (text) => (state.preparing[seat] = text)).finally(() => (state.preparing[seat] = null)),
+      ),
+    );
+    entrants = { left: l!, right: r! };
+  } catch (err) {
+    notify('error', 'Could not prepare the entrants', err instanceof Error ? err.message : String(err));
+    return;
+  }
+
+  const settings = { ...state.settings };
+  const matchId = newId();
+  state.replayId = matchId;
+  await persistReplay({
+    format: REPLAY_FORMAT,
+    version: 1,
+    id: matchId,
+    createdAt: new Date().toISOString(),
+    arena: { version: ARENA_VERSION, loaderVersion: LOADER_VERSION },
+    rules: { id: RULES_ID, digest: RULES_DIGEST },
+    seats: {
+      left: { sha256: left.sha256, size: left.size, metadata: left.metadata, side: sides.left },
+      right: { sha256: right.sha256, size: right.size, metadata: right.metadata, side: sides.right },
+    },
+    settings: {
+      firstSide: settings.firstSide,
+      seed: settings.seed,
+      difficulty: settings.difficulty,
+      nodeBudget: settings.nodeBudget,
+      deadlines: { load: DEADLINES.load, think: settings.thinkDeadlineMs, render: DEADLINES.render },
+    },
+    initial: initialSnapshot(settings.firstSide),
+    plies: [],
+    result: null,
+    final: null,
+  });
+
+  const created = new MatchController({
+    matchId,
+    entrants,
+    settings: {
+      sides,
+      firstSide: settings.firstSide,
+      difficulty: settings.difficulty,
+      seed: settings.seed,
+      nodeBudget: settings.nodeBudget,
+      thinkDeadlineMs: settings.thinkDeadlineMs,
+    },
+    seatFactory: createSeatWorker,
+    refereeFactory: createRefereeWorker,
+    clock: realClock,
+    loadDeadlineMs: DEADLINES.load,
+    renderDeadlineMs: DEADLINES.render,
+    animation: () => (prefersReducedMotion() ? { ...SPEEDS[state.settings.speed], steps: [] } : SPEEDS[state.settings.speed]),
+    listener: {
+      state: (view) => {
+        if (controller === created) state.match = view;
+      },
+      frame: (seat, frame, rev) => presenters[seat]?.(frame, rev),
+      settled: (frames, rev) => presentSettled(frames, rev),
+      committed: async (record, snapshot) => {
+        if (replay?.id === matchId) await persistReplay(withPly(replay, record));
+        audio.play(record.captured ? 'capture' : 'move');
+        state.announcement = describeMove(snapshot.rev, record.seat, record.side, record.move.src, record.move.dst, record.captured !== null);
+      },
+      ended: async (result, snapshot) => {
+        if (replay?.id === matchId) await persistReplay(withResult(replay, result, snapshot));
+        state.replays = await store.listReplays();
+        audio.play('end');
+        if (result.kind === 'system-error') notify('error', 'The match stopped with a system error', result.message);
+        else if (result.kind === 'forfeit' && result.forfeit) {
+          const f = result.forfeit;
+          const title = f.reason === 'timeout' ? 'An entrant ran out of time' : f.reason === 'trap' ? 'An entrant crashed' : 'An entrant proposed an invalid move';
+          notify('warning', title, `${f.side} (${f.seat} seat) forfeited: ${f.message}`);
+        }
+      },
+    },
+  });
+  controller = created;
+  await created.start();
+  if (controller !== created) return;
+  const view = created.view;
+  if (view.phase === 'failed') {
+    notify('error', 'An entrant failed to initialize', view.failure ?? 'Unknown failure.');
+    return;
+  }
+  if (!state.settings.beginPaused) created.play();
+}
+
+export function stopMatch(): void {
+  controller?.dispose();
+  controller = null;
+}
+
+/** Same entrants and settings, colours exchanged; the play page's URL follows. */
+export async function swapAndRematch(): Promise<void> {
+  state.settings.leftSide = opponent(state.settings.leftSide);
+  const config = currentPlayConfig();
+  if (config) history.replaceState(null, '', playUrl(config));
+  await startMatch();
+}
+
+// ---- Setup page → play page ----------------------------------------------------------------
+
+function currentPlayConfig(): PlayConfig | null {
+  const { left, right } = state.selection;
+  if (!left || !right) return null;
+  return { left, right, ...state.settings };
+}
+
+/** Setup page: open the full-screen play page for the chosen entrants and settings. */
+export function goToPlay(): void {
+  const config = currentPlayConfig();
+  if (!config) {
+    notify('warning', 'Pick two entrants', 'Choose a version in each column before starting.');
+    return;
+  }
+  location.assign(playUrl(config));
+}
+
+/**
+ * Play page boot: storage and catalogs, then either a saved replay (`?replay=`) or the match
+ * described by the URL, started at once (the visitor already pressed Start on the setup page).
+ */
+export async function bootPlay(): Promise<void> {
+  await boot();
+  const request = parsePlayQuery();
+  if (request.issues.length > 0) {
+    notify('warning', 'Some match settings in the link were ignored', request.issues.join(', '));
+  }
+  if (request.replay) {
+    const saved = state.replays.find((r) => r.id === request.replay) ?? null;
+    if (!saved) notify('error', 'Replay not found', 'This browser has no saved replay with that id. Open it from the Arena setup page.');
+    state.viewReplay = saved;
+    return;
+  }
+  const { left, right, ...settings } = request.config;
+  for (const [seat, sha] of [['left', left], ['right', right]] as const) {
+    if (!sha) continue;
+    if (entryByHash(sha)) state.selection[seat] = sha;
+    else notify('error', `The ${seat} program is not available`, `${sha.slice(0, 12)}… is not in the public catalog or on this device. Upload it first.`);
+  }
+  Object.assign(state.settings, settings);
+  await startMatch();
+}
+
+export const play = () => {
+  audio.unlock();
+  controller?.play();
+};
+export const pause = () => controller?.pause();
+export const step = () => {
+  audio.unlock();
+  controller?.step();
+};
+export const flip = (seat: Seat) => controller?.flip(seat);
+export const resync = (seat: Seat) => controller?.resync(seat);
+
+export function setMuted(muted: boolean): void {
+  audio.unlock();
+  audio.setMuted(muted);
+  state.muted = muted;
+}
+
+// ---- Replays ------------------------------------------------------------------------------------
+
+export async function refreshReplays(): Promise<void> {
+  state.replays = await store.listReplays();
+}
+
+export async function deleteReplay(id: string): Promise<void> {
+  await store.deleteReplay(id);
+  await refreshReplays();
+}
+
+export async function saveImportedReplay(imported: ReplayV1): Promise<void> {
+  await store.putReplay(imported);
+  await refreshReplays();
+}
+
+export function downloadReplay(r: ReplayV1): void {
+  const blob = new Blob([`${JSON.stringify(r, null, 2)}\n`], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `jungle-replay-${r.id}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/** Resolve a recorded seat to a runnable entrant, if its exact binary is available. */
+export async function entrantForReplay(sha256: string): Promise<MatchEntrant | null> {
+  const entry = entryByHash(sha256);
+  if (!entry) return null;
+  try {
+    return await prepareEntrant(entry);
+  } catch {
+    return null;
+  }
+}

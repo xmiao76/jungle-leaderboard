@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  site:
+    name: Leaderboard + Arena
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npx playwright test --project=chromium --project=webkit
+
+  test-fixtures:
+    name: Arena test fixtures build from source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Rebuild arena/test-fixtures/ from tests/test-entrant/ and run the loader suites against them.
+      - run: npm run build:fixtures
+      - run: npx vitest run arena/src/loader
+
+  wasm-sample:
+    name: Standalone sample game
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wasm_sample
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.1
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: v0.15.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: wasm_sample/package-lock.json
+      - run: npm ci
+      - run: npm run build:all
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=chromium

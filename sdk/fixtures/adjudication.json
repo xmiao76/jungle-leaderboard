@@ -1,0 +1,62 @@
+[
+  {
+    "name": "den",
+    "board": { "2": "red:cat", "0": "blue:rat" },
+    "move": [2, 3],
+    "quietBefore": 99,
+    "quietAfter": 100,
+    "status": "won",
+    "winner": "red",
+    "reason": "den"
+  },
+  {
+    "name": "elimination",
+    "board": { "42": "red:rat", "43": "blue:elephant" },
+    "move": [42, 43],
+    "quietBefore": 99,
+    "quietAfter": 0,
+    "status": "won",
+    "winner": "red",
+    "reason": "elimination"
+  },
+  {
+    "name": "immobilization",
+    "board": { "2": "red:dog", "7": "red:cat", "0": "blue:rat" },
+    "move": [2, 1],
+    "quietBefore": 99,
+    "quietAfter": 100,
+    "status": "won",
+    "winner": "red",
+    "reason": "immobilization"
+  },
+  {
+    "name": "quiet-98",
+    "board": { "42": "red:cat", "6": "blue:dog" },
+    "move": [42, 43],
+    "quietBefore": 98,
+    "quietAfter": 99,
+    "status": "playing",
+    "winner": null,
+    "reason": ""
+  },
+  {
+    "name": "no-capture",
+    "board": { "42": "red:cat", "6": "blue:dog" },
+    "move": [42, 43],
+    "quietBefore": 99,
+    "quietAfter": 100,
+    "status": "drawn",
+    "winner": null,
+    "reason": "no-capture"
+  },
+  {
+    "name": "capture-resets",
+    "board": { "42": "red:wolf", "43": "blue:cat", "6": "blue:dog" },
+    "move": [42, 43],
+    "quietBefore": 99,
+    "quietAfter": 0,
+    "status": "playing",
+    "winner": null,
+    "reason": ""
+  }
+]

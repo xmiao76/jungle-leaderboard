@@ -1,0 +1,14 @@
+{
+  "legalCountPerSide": 24,
+  "redFirst": { "index0": [42, 35], "index23": [62, 61] },
+  "blueFirst": { "index0": [0, 1] },
+  "afterRedIndex0": {
+    "rev": 1,
+    "emptySquares": [42],
+    "pieces": { "35": "red:elephant" },
+    "noCapturePlies": 1,
+    "history": [[42, 35]],
+    "toPlay": "blue",
+    "status": "playing"
+  }
+}

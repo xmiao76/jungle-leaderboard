@@ -1,0 +1,118 @@
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/ibm-plex-sans/wght.css';
+@import 'tailwindcss';
+@import '../../../src/styles/tokens.css';
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--c-bg);
+    background-image:
+      radial-gradient(62rem 30rem at 10% -10rem, var(--c-wash-jade), transparent 64%),
+      radial-gradient(50rem 26rem at 94% -4rem, var(--c-wash-gold), transparent 60%);
+    background-repeat: no-repeat;
+    color: var(--c-fg);
+    font-family: var(--font-sans);
+  }
+
+  th,
+  td,
+  time,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Play page (/arena/play/): one shared bar, then the two guest boards as large
+   as the viewport allows, side by side — or stacked on portrait screens. Board
+   size is pure CSS: the largest 7:9 box that fits twice, so nothing scrolls.
+   --------------------------------------------------------------------------- */
+html.play-page,
+html.play-page body {
+  height: 100%;
+  overflow: hidden;
+}
+
+.play-root {
+  --bar-h: 46px;
+  --label-h: 28px;
+  --gap: 10px;
+  --avail-h: calc(100dvh - var(--bar-h) - var(--label-h) - 2 * var(--gap));
+  --avail-w: calc((100vw - 3 * var(--gap)) / 2);
+  --board-h: min(var(--avail-h), calc(var(--avail-w) * 9 / 7));
+  --board-w: calc(var(--board-h) * 7 / 9);
+  display: grid;
+  grid-template-rows: var(--bar-h) minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.play-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+  padding: var(--gap);
+  min-height: 0;
+}
+
+.play-seat {
+  display: flex;
+  flex-direction: column;
+  width: var(--board-w);
+  flex: none;
+}
+
+.play-label {
+  height: var(--label-h);
+  min-width: 0;
+}
+
+.play-board {
+  position: relative;
+  width: var(--board-w);
+  height: var(--board-h);
+}
+
+.play-board canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-aspect-ratio: 5/6) {
+  .play-root {
+    --avail-h: calc((100dvh - var(--bar-h) - 2 * var(--label-h) - 3 * var(--gap)) / 2);
+    --avail-w: calc(100vw - 2 * var(--gap));
+  }
+
+  .play-stage {
+    flex-direction: column;
+  }
+}
+
+/* The bar never wraps (that would change --bar-h); its control group scrolls instead. */
+.play-bar-controls {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.play-drawer {
+  transition: transform 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-drawer {
+    transition: none;
+  }
+}

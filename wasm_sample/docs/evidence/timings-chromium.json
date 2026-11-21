@@ -1,0 +1,14 @@
+{
+  "coldLoadMs": 197,
+  "easyThinkMs": 8,
+  "easyFramesDuringSearch": 1,
+  "easyMaxFrameGapMs": 10,
+  "mediumThinkMs": 78,
+  "mediumFramesDuringSearch": 5,
+  "mediumMaxFrameGapMs": 17,
+  "hardThinkMs": 759,
+  "hardFramesDuringSearch": 45,
+  "hardMaxFrameGapMs": 17,
+  "browser": "chromium",
+  "at": "2026-11-21T05:22:33.568Z"
+}
