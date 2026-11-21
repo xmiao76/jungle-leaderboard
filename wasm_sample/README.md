@@ -4,7 +4,7 @@ A standalone, playable **Jungle (Dou Shou Qi, 斗兽棋)** web game whose releas
 single-file **Arena entrant**, `jungle-opus55-1.0.0.wasm`: the same strategy, rules and artwork as a
 self-contained WebAssembly Component for the [Jungle Arena](https://jungle-leaderboard.pages.dev/arena/).
 
-Built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in [`prompt.md`](prompt.md).
+Built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in [`jungle_prompt.md`](jungle_prompt.md).
 
 | | |
 |---|---|
