@@ -128,6 +128,7 @@ impl wit::Guest for Entrant {
             game_version: identity::GAME_VERSION.into(),
             model: identity::MODEL.into(),
             code_agent: identity::CODE_AGENT.into(),
+            github_url: identity::GITHUB_URL.into(),
             engine_version: identity::ENGINE_VERSION.into(),
             runtime: identity::RUNTIME.into(),
             rules_id: RULES_ID.into(),
@@ -150,7 +151,7 @@ impl wit::Guest for Entrant {
         let snapshot = to_core(&state);
         let legal: Vec<Move> = legal.iter().map(|m| Move { src: m.src, dst: m.dst }).collect();
         let (level, seed) = STATE.with_borrow(|s| (s.level, s.seed));
-        choose_index(&snapshot, &legal, SearchParams { node_budget, seed, level })
+        choose_index(&snapshot, &legal, SearchParams { node_budget, seed, level, deadline: None })
     }
 
     fn render(state: wit::Snapshot, flipped: bool, progress: u16) {

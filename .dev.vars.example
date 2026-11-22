@@ -1,0 +1,10 @@
+# Copy to .dev.vars (git-ignored) so `npm run dev:full` and the other local API
+# servers can accept catalog uploads. wrangler pages dev loads it automatically.
+# Production values are set with `wrangler pages secret put`, never committed.
+
+# Cloudflare's public always-pass Turnstile test secret; any token verifies against it.
+# (1x0000000000000000000000000000000AA is the documented test value, not a real secret.)
+TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+
+# Salts the uploader-address hash used for quotas. Any local string works.
+UPLOADER_SALT=local-development-salt

@@ -43,11 +43,11 @@ describe('smoke test on the test entrant', () => {
   });
 });
 
-describe('the public catalog program', () => {
-  // The real game published with the site: a different program, so a different board.
+describe('the seed catalog program', () => {
+  // The real game seeded into the catalog: a different program, so a different board.
   const published = () => {
-    const manifest = JSON.parse(readFileSync(new URL('../../public/catalog/manifest.json', import.meta.url), 'utf8'));
-    return readBinary(new URL(`../../public/catalog/${manifest.entries[0].file}`, import.meta.url));
+    const manifest = JSON.parse(readFileSync(new URL('../../../seed/catalog/seed.json', import.meta.url), 'utf8'));
+    return readBinary(new URL(`../../../seed/catalog/${manifest.entries[0].file}`, import.meta.url));
   };
 
   it('passes the smoke test', async () => {

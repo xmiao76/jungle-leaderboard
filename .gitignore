@@ -23,6 +23,12 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
+# Local Cloudflare state (D1, R2) and wrangler build scratch; local Functions secrets
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
 # Arena test-entrant build output (the built fixtures live in arena/test-fixtures/)
 tests/test-entrant/target/
 test-results/

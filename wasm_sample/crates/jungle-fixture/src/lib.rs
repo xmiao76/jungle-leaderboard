@@ -54,6 +54,7 @@ impl Guest for Fixture {
             game_version: "1.0.0".into(),
             model: "Claude-Opus-5.5".into(),
             code_agent: "ClaudeCode".into(),
+            github_url: "https://github.com/xmiao76/jungle-leaderboard".into(),
             engine_version: "fixture: always legal index 0".into(),
             runtime: "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0".into(),
             rules_id: RULES_ID.into(),

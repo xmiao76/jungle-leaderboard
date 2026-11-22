@@ -51,6 +51,8 @@ export interface Metadata {
   readonly gameVersion: string;
   readonly model: string;
   readonly codeAgent: string;
+  /** The game's public GitHub repository URL (`https://github.com/<owner>/<repo>`). */
+  readonly githubUrl: string;
   readonly engineVersion: string;
   readonly runtime: string;
   readonly rulesId: string;

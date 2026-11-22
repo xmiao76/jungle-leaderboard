@@ -16,6 +16,7 @@ interface game {
         game-version: string,
         model: string,
         code-agent: string,
+        github-url: string,
         engine-version: string,
         runtime: string,
         rules-id: string,

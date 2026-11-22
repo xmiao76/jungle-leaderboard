@@ -1,14 +1,14 @@
 {
-  "coldLoadMs": 197,
-  "easyThinkMs": 8,
-  "easyFramesDuringSearch": 1,
-  "easyMaxFrameGapMs": 10,
-  "mediumThinkMs": 78,
-  "mediumFramesDuringSearch": 5,
+  "coldLoadMs": 235,
+  "easyThinkMs": 9,
+  "easyFramesDuringSearch": 0,
+  "easyMaxFrameGapMs": 11,
+  "mediumThinkMs": 87,
+  "mediumFramesDuringSearch": 6,
   "mediumMaxFrameGapMs": 17,
-  "hardThinkMs": 759,
-  "hardFramesDuringSearch": 45,
+  "hardThinkMs": 1000,
+  "hardFramesDuringSearch": 60,
   "hardMaxFrameGapMs": 17,
   "browser": "chromium",
-  "at": "2026-11-21T05:22:33.568Z"
+  "at": "2026-11-22T09:11:39.218Z"
 }

@@ -7,7 +7,7 @@ fn main() {
     let s = apply_move(&initial_snapshot(Side::Red), Move { src: 42, dst: 35 }).unwrap();
     for (level, budget) in [(Level::Easy, 2_000), (Level::Medium, 30_000), (Level::Hard, 300_000)] {
         let t = std::time::Instant::now();
-        let r = search(&cells_of(&s.board), s.to_play, s.no_capture_plies, s.rev, SearchParams { node_budget: budget, seed: 11, level });
+        let r = search(&cells_of(&s.board), s.to_play, s.no_capture_plies, s.rev, SearchParams { node_budget: budget, seed: 11, level, deadline: None });
         println!("{level:?} budget {budget}: nodes {} depth {} best {:?} score {} in {:?}", r.nodes, r.depth, r.best, r.score, t.elapsed());
     }
 }

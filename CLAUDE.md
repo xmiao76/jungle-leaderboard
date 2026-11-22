@@ -10,6 +10,9 @@ npm run build        # astro check && astro build -> dist/
 npm run check        # type + template diagnostics only
 npm test             # vitest run
 npm run test:watch   # vitest in watch mode
+npm run dev:full     # built site + catalog API (wrangler pages dev, local D1/R2) at :8788
+npm run db:migrate -- --local    # apply migrations/ to local state (--remote: production)
+npm run db:seed -- --local       # load seed/catalog/ into local D1/R2 (--remote: production)
 ```
 
 Single test file or single case:
@@ -87,8 +90,22 @@ runs both). Spec: `arena_prompt.md`. Protocol and replay format: `sdk/README.md`
   plays legal index 0) used by e2e tests as an upload; `broken-*` fail admission; `late-*` pass it and
   misbehave from revision 2, for forfeit tests. None of them belongs in the public catalog, which holds
   only real games.
-- Public catalog binaries are committed; add them only with `npm run catalog:add`, which validates,
-  copies and updates `manifest.json`. `npm test` re-hashes every one.
+- **The public catalog is a database, not a static file.** Pages Functions in `functions/` (logic in
+  `server/`, type-checked by `functions/tsconfig.json` against the generated
+  `worker-configuration.d.ts`; rerun `npm run cf-typegen` after editing `wrangler.toml`) serve
+  `/api/catalog/manifest.json` from D1 (`migrations/`) and `/api/catalog/<sha256>.wasm` from R2, in the
+  manifest format `parseManifest` already reads. `catalogBase()` points there (`../api/catalog/` from
+  the Arena root). Plan and status: `docs/PLAN-shared-catalog.md`.
+- **Curated entries live in `seed/catalog/`** (binaries + `seed.json`); add them only with
+  `npm run catalog:add` (validates, copies, updates `seed.json`; `--reference` picks the one program
+  conformance runs play against), then load them with `npm run db:seed`. `npm test` re-hashes every one.
+- **Server tests use real local D1/R2**: `server/local-env.test-support.ts` starts workerd through
+  wrangler's `getPlatformProxy` (in memory, never remote) and applies every migration. workerd on
+  Windows needs the Visual C++ 2015+ runtime. `wrangler.toml`'s `compatibility_date` cannot exceed what
+  the pinned workerd supports (2026-08-18 today).
+- **e2e and conformance start the API themselves**: `scripts/api-server.ts --fresh` (migrate + seed a
+  throwaway `.wrangler/*-state`, then `wrangler pages dev`), and `serve-static.mjs --api` forwards the
+  nested prefix's `api/` to it, so the relative-URL proof still holds.
 
 ## Template authoring gotcha
 
@@ -145,8 +162,16 @@ Tokens live in `src/styles/global.css` as CSS custom properties on `:root`, with
 
 ## Deployment
 
-`npm run deploy` runs the tests, then a type-checked build, then `wrangler pages deploy dist` to the
-Cloudflare Pages project `jungle-leaderboard`.
+`npm run deploy` checks `wrangler.toml`, runs the tests, then a type-checked build, applies D1
+migrations remotely, then `wrangler pages deploy dist` (static site + `functions/`) to the Cloudflare
+Pages project `jungle-leaderboard`.
+
+**Deploy is blocked until the production database exists.** `wrangler.toml` carries an all-zero
+placeholder `database_id`, and `scripts/check-deploy-config.mjs` refuses to deploy while it does.
+One-time setup (account: Workers Free, R2 Paid): `wrangler d1 create jungle-arena` and
+`wrangler r2 bucket create jungle-arena-entrants`, record the id in `wrangler.toml`, then
+`npm run db:migrate -- --remote` and `npm run db:seed -- --remote`. Creating account resources is
+outward-facing: ask first.
 
 **Pushing to GitHub deploys nothing.** The project is Direct Upload, not Git-connected, and
 Cloudflare fixes that choice at creation time — so never describe a push as publishing, and do not

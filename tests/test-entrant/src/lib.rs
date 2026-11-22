@@ -75,6 +75,7 @@ impl Guest for Entrant {
             game_version: GAME_VERSION.into(),
             model: "Claude-Opus-5.5".into(),
             code_agent: "ClaudeCode".into(),
+            github_url: "https://github.com/xmiao76/jungle-leaderboard".into(),
             engine_version: format!("test entrant {GAME_VERSION}: always plays legal index 0"),
             runtime: "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0".into(),
             rules_id: RULES_ID.into(),

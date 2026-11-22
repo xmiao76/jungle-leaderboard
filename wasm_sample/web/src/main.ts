@@ -29,6 +29,7 @@ interface Release {
   gameVersion: string;
   model: string;
   codeAgent: string;
+  githubUrl: string;
   engineVersion: string;
   runtime: string;
   rulesId: string;
@@ -284,7 +285,8 @@ function identityRows(r: Release): string {
     ['Runtime', r.runtime],
     ['Rules', `${r.rulesId} · ${r.rulesDigest.slice(0, 16)}…`],
   ];
-  return `<dl class="identity">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('')}</dl>`;
+  const github = `<dt>GitHub</dt><dd><a href="${escapeHtml(r.githubUrl)}" target="_blank" rel="noreferrer noopener">${escapeHtml(r.githubUrl)}</a></dd>`;
+  return `<dl class="identity">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('')}${github}</dl>`;
 }
 
 function escapeHtml(text: string): string {

@@ -85,6 +85,19 @@ describe('Session', () => {
     expect(engine.rev()).toBe(2);
   });
 
+  it('gives Hard a one-second wall-clock deadline, and only Hard', () => {
+    const before = Date.now();
+    const hard = setup({ mode: 'ai-ai', level: 2 });
+    hard.session.advance();
+    const deadline = hard.requests[0]!.deadlineEpochMs!;
+    expect(deadline).toBeGreaterThanOrEqual(before + 1000);
+    expect(deadline).toBeLessThanOrEqual(Date.now() + 1000);
+
+    const medium = setup({ mode: 'ai-ai', level: 1 });
+    medium.session.advance();
+    expect(medium.requests[0]!.deadlineEpochMs).toBeUndefined();
+  });
+
   it('cancel (restart) drops the outstanding request', () => {
     const { session, requests, answer } = setup({ mode: 'ai-ai' });
     session.advance();

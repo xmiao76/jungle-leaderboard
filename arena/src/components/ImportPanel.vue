@@ -153,6 +153,8 @@ function useIn(seat: Seat) {
           <dd>{{ result.outcome.metadata.model }}</dd>
           <dt class="text-subtle">Code agent</dt>
           <dd>{{ result.outcome.metadata.codeAgent }}</dd>
+          <dt class="text-subtle">GitHub</dt>
+          <dd><a :href="result.outcome.metadata.githubUrl" target="_blank" rel="noreferrer noopener" class="text-accent underline underline-offset-2 break-all">{{ result.outcome.metadata.githubUrl }}</a></dd>
           <dt class="text-subtle">Game version</dt>
           <dd>{{ result.outcome.metadata.gameVersion }}</dd>
           <dt class="text-subtle">Runtime</dt>

@@ -9,8 +9,9 @@ Built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in [`jungle_prom
 | | |
 |---|---|
 | Live game | <https://jungle-wasm-sample.pages.dev> *(published by `npm run deploy`; see Release below)* |
-| Arena entrant | `jungle-opus55-1.0.0.wasm` — 121,149 bytes |
-| SHA-256 | `2aac1b22528b392452d2f81460bcd2b42fca261624cc1b1db619339afe5363c1` |
+| Arena entrant | `jungle-opus55-1.0.0.wasm` — 121,655 bytes |
+| SHA-256 | `d21e646924498b29a72ffb9ef06b5bfb2f39f174166cdfe1d3db40b992ae78f9` |
+| GitHub | <https://github.com/xmiao76/jungle-leaderboard> (also reported by `info()` as `github-url`) |
 | World | `jungle:arena/competitor@1.0.0` — imports only `jungle:arena/display@1.0.0` |
 | Rules | `desktop-jungle-v1`, digest `a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63` |
 | Game / engine version | 1.0.0 / jungle-core 1.0.0 (alpha-beta, iterative deepening) |
@@ -75,8 +76,9 @@ the parity tests can require identical choices and **byte-identical** settled fr
 ordering, and an evaluation of material, advancement, den threats and trap exposure. Every visited
 position counts against the node budget; state is fresh for every call and ties are broken by a
 xorshift stream seeded from (seed, revision), so equal inputs reproduce the same choice and rendering
-can never influence it. Standalone budgets: Easy 2,000 nodes (with more noise), Medium 30,000, Hard
-300,000.
+can never influence it. Standalone budgets: Easy 2,000 nodes (with more noise), Medium 30,000; Hard
+searches against a one-second wall-clock deadline per move (worker messaging included) and plays
+the best move of its deepest completed search.
 
 **Rendering.** A software rasterizer over an embedded, deflated sprite atlas (Twemoji animals, original
 tiles, labels and banners rasterized at build time). Pieces show the animal and its English name;

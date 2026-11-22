@@ -19,6 +19,7 @@ The deployed Arena serves the same files at `arena/sdk/`.
   `jungle:arena/display@1.0.0` and whose only export is `jungle:arena/game@1.0.0`, with exactly the
   WIT's types. WASI or any other import is rejected — the host supplies nothing else.
 - `info()` works before `init()`, and reports `rules-id = desktop-jungle-v1` and the digest above.
+  Its `github-url` is required: the game's public GitHub repository URL (`https://github.com/<owner>/<repo>`).
 - `choose-move` returns an index into **the list it was given** (sorted by `(src, dst)`). The node
   budget is a ceiling; count every visited position. Keep a legal fallback.
 - `render` calls `display.present` **exactly once**, synchronously, with a 448 × 576 RGBA8 frame
@@ -33,8 +34,9 @@ The deployed Arena serves the same files at `arena/sdk/`.
 3. Contract: the component's imports and exports, with fully expanded type signatures, must equal
    those of a component built from `wit/jungle.wit` (`arena/src/loader/canonical-contract.json`).
 4. Transpilation with jco (`@bytecodealliance/jco-transpile@0.24.0`) in a dedicated worker.
-5. A smoke test on a disposable instance: `info()` (rules ID and digest must match), `init`, one
-   `choose-move` on the opening, and two settled frames (unflipped, flipped).
+5. A smoke test on a disposable instance: `info()` (rules ID and digest must match, and `github-url`
+   must be a `https://github.com/<owner>/<repo>` URL), `init`, one `choose-move` on the opening,
+   and two settled frames (unflipped, flipped).
 
 `npm run conformance -- path/to/entrant.wasm` runs this plus behavioural checks and full matches in a
 real browser. `npm run catalog:add -- path/to/entrant.wasm` runs it and publishes the binary in the

@@ -32,12 +32,21 @@ export interface Engine {
   free?(): void;
 }
 
+/** Hard controls its thinking to one second per move, worker messaging included. */
+export const HARD_THINK_MS = 1000;
+
 export interface AiRequest {
   readonly id: number;
   readonly snapshot: Uint8Array;
   readonly budget: number;
   readonly seed: number;
   readonly level: Level;
+  /**
+   * Hard only: the wall-clock deadline for this move, as an epoch timestamp
+   * (`Date.now()` domain, so the page and the worker agree on it). When present,
+   * the worker searches against the deadline instead of the node budget.
+   */
+  readonly deadlineEpochMs?: number;
 }
 
 export interface AiReply {
@@ -107,6 +116,7 @@ export class Session {
       // Mix the epoch in so a replay after undo does not have to repeat the same choice.
       seed: (this.options.seed ^ (this.epoch * 0x9e3779b1)) >>> 0,
       level: this.options.level,
+      ...(this.options.level === 2 ? { deadlineEpochMs: Date.now() + HARD_THINK_MS } : {}),
     });
   }
 

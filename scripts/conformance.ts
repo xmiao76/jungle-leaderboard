@@ -4,13 +4,15 @@
 //                                              [--url https://deployed.example/arena/] [--json out.json]
 //
 // By default it serves the local build (dist/) under a random nested subpath, which also
-// proves every Arena URL is relative. With --url it drives a deployed Arena instead.
+// proves every Arena URL is relative, with the catalog API on fresh seeded local state
+// (scripts/api-server.ts). With --url it drives a deployed Arena instead.
 // The page admits the file through the public upload path, runs behavioural checks and
 // plays full matches; this script prints the report and exits non-zero on failure.
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, firefox, webkit, type Browser } from '@playwright/test';
+import { startApiServer, type ApiServer } from './api-server';
 // @ts-expect-error -- plain ESM helper without type declarations
 import { startStaticServer } from './serve-static.mjs';
 
@@ -47,6 +49,7 @@ const browserName = flag('browser') ?? 'chromium';
 const deployed = flag('url');
 
 let server: { url: string; close: () => Promise<void> } | null = null;
+let api: ApiServer | null = null;
 let arenaUrl: string;
 if (deployed) {
   arenaUrl = deployed.endsWith('/') ? deployed : `${deployed}/`;
@@ -56,7 +59,8 @@ if (deployed) {
     process.exit(2);
   }
   const prefix = `/conformance-${Math.random().toString(36).slice(2, 8)}/nested/`;
-  server = await startStaticServer({ dir: join(ROOT, 'dist'), prefix });
+  api = await startApiServer({ port: 4420, stateDir: join(ROOT, '.wrangler', 'conformance-state'), fresh: true });
+  server = await startStaticServer({ dir: join(ROOT, 'dist'), prefix, api: api.origin });
   arenaUrl = `${server!.url}arena/`;
 }
 
@@ -86,5 +90,6 @@ try {
 } finally {
   await browser.close();
   await server?.close();
+  await api?.close();
 }
 process.exit(exitCode);

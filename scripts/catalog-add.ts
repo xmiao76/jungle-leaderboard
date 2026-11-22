@@ -1,12 +1,14 @@
-// Maintainer command: admit a binary to the public catalog.
+// Maintainer command: add a binary to the seed catalog (seed/catalog/), the curated programs
+// `npm run db:seed` loads into the Arena's catalog database.
 //
 //   npm run catalog:add -- path/to/entrant.wasm [--language Rust] [--source <url or path>]
 //                          [--toolchain "rustc 1.94.1 + wit-bindgen 0.63.0"] [--credits "…"]
+//                          [--reference]
 //
 // Runs the same checks as a browser import (size, component header, contract against
 // wit/jungle.wit, then a deadline-bounded smoke test), copies the exact bytes into
-// arena/public/catalog/, and records the hash in manifest.json. The entry is public
-// after the next `npm run deploy`.
+// seed/catalog/, and records the hash in seed.json. --reference makes it the one program
+// every upload test plays against. It is public after `npm run db:seed -- --remote`.
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -19,8 +21,8 @@ import { isComponentBinary } from '../arena/src/loader/strip';
 import type { Metadata } from '../arena/src/referee/types';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const CATALOG = join(ROOT, 'arena', 'public', 'catalog');
-const MANIFEST = join(CATALOG, 'manifest.json');
+const CATALOG = join(ROOT, 'seed', 'catalog');
+const MANIFEST = join(CATALOG, 'seed.json');
 
 function flag(name: string): string | null {
   const i = process.argv.indexOf(`--${name}`);
@@ -53,8 +55,10 @@ function smoke(file: string): Promise<{ ok: boolean; metadata: Metadata | null; 
   });
 }
 
-const input = process.argv.slice(2).find((a, i, all) => !a.startsWith('--') && !all[i - 1]?.startsWith('--'));
-if (!input) fail('usage: npm run catalog:add -- path/to/entrant.wasm [--language L] [--source S] [--toolchain T] [--credits C]');
+// Flags that take a value; --reference does not, so it may appear anywhere.
+const VALUE_FLAGS = new Set(['--language', '--source', '--toolchain', '--credits']);
+const input = process.argv.slice(2).find((a, i, all) => !a.startsWith('--') && !VALUE_FLAGS.has(all[i - 1] ?? ''));
+if (!input) fail('usage: npm run catalog:add -- path/to/entrant.wasm [--language L] [--source S] [--toolchain T] [--credits C] [--reference]');
 const path = resolve(input);
 const bytes = new Uint8Array(readFileSync(path));
 
@@ -73,10 +77,11 @@ const metadata = report.metadata;
 console.log(`smoke ok  ${metadata.title} v${metadata.gameVersion} (${metadata.model}, ${metadata.codeAgent})`);
 
 const fileName = `${slug(metadata.title)}-${slug(metadata.gameVersion)}-${sha256.slice(0, 8)}.wasm`;
-copyFileSync(path, join(CATALOG, fileName));
 
 const { manifest, issues: manifestIssues } = parseManifest(JSON.parse(readFileSync(MANIFEST, 'utf8')));
-if (!manifest || manifestIssues.length > 0) fail(`the existing manifest is invalid: ${manifestIssues.join(' ')}`);
+if (!manifest || manifestIssues.length > 0) fail(`the existing seed.json is invalid: ${manifestIssues.join(' ')}`);
+// Re-adding the current reference (say, to fix its credits) keeps it the reference.
+const reference = process.argv.includes('--reference') || manifest.entries.some((e) => e.sha256 === sha256 && e.reference);
 const language = flag('language');
 const entry: PublicEntry = {
   sha256,
@@ -86,9 +91,15 @@ const entry: PublicEntry = {
   addedAt: new Date().toISOString().slice(0, 10),
   provenance: language ? { language, source: flag('source') ?? '', toolchain: flag('toolchain') ?? metadata.runtime } : null,
   credits: flag('credits'),
+  reference,
 };
-const entries = [...manifest.entries.filter((e) => e.sha256 !== sha256), entry].sort(
+// One reference at most: flagging this entry unflags the previous one.
+const kept = manifest.entries.filter((e) => e.sha256 !== sha256).map((e) => (reference ? { ...e, reference: false } : e));
+if (!reference && !kept.some((e) => e.reference)) fail('the seed needs one reference opponent: pass --reference');
+// Every check passed: only now copy the bytes, then record them.
+copyFileSync(path, join(CATALOG, fileName));
+const entries = [...kept, entry].sort(
   (a, b) => a.metadata.title.localeCompare(b.metadata.title) || a.metadata.gameVersion.localeCompare(b.metadata.gameVersion),
 );
 writeFileSync(MANIFEST, `${JSON.stringify({ format: 'jungle-arena-catalog', version: 1, entries }, null, 2)}\n`);
-console.log(`added    catalog/${fileName} — publish it with the next \`npm run deploy\``);
+console.log(`added    seed/catalog/${fileName}${reference ? ' as the reference opponent' : ''}; load it with \`npm run db:seed -- --local\`, publish with --remote`);

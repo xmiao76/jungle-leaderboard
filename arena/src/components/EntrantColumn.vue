@@ -62,6 +62,10 @@ const originLabel = (origin: 'public' | 'device') => (origin === 'public' ? 'Pub
       <dd>{{ selected.metadata.model }}</dd>
       <dt class="text-subtle">Code agent</dt>
       <dd>{{ selected.metadata.codeAgent }}</dd>
+      <template v-if="selected.metadata.githubUrl">
+        <dt class="text-subtle">GitHub</dt>
+        <dd><a :href="selected.metadata.githubUrl" target="_blank" rel="noreferrer noopener" class="text-accent underline underline-offset-2 break-all">{{ selected.metadata.githubUrl }}</a></dd>
+      </template>
       <dt class="text-subtle">Game version</dt>
       <dd>{{ selected.metadata.gameVersion }}</dd>
       <dt class="text-subtle">Engine</dt>

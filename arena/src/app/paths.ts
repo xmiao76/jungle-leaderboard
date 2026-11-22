@@ -21,7 +21,8 @@ export const arenaUrl = (selection: Partial<Record<Seat, string | null>> = {}): 
 };
 export const uploadUrl = (): string => new URL('upload/', appRoot()).href;
 export const leaderboardUrl = (): string => new URL('../', appRoot()).href;
-export const catalogBase = (): URL => new URL('catalog/', appRoot());
+/** The catalog API (functions/api/catalog/), a sibling of the Arena at the site root. */
+export const catalogBase = (): URL => new URL('../api/catalog/', appRoot());
 export const sdkUrl = (file: string): string => new URL(`sdk/${file}`, appRoot()).href;
 
 // ---- The play page (/arena/play/) -------------------------------------------------------

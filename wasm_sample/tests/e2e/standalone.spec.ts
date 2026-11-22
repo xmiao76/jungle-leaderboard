@@ -54,7 +54,7 @@ test('loads from a nested path, shows the release identity, and offers the exact
   await open(page);
   const info = (await instantiate(RELEASE)).game.info();
   const identity = page.getByTestId('identity');
-  for (const key of ['model', 'codeAgent', 'engineVersion', 'runtime', 'rulesId'] as const) await expect(identity).toContainText(info[key]!);
+  for (const key of ['model', 'codeAgent', 'githubUrl', 'engineVersion', 'runtime', 'rulesId'] as const) await expect(identity).toContainText(info[key]!);
   await expect(identity).toContainText(`${info['title']} v${info['gameVersion']}`);
   await page.getByRole('button', { name: 'Cancel' }).click();
 
@@ -193,6 +193,8 @@ test('stays responsive while the AI searches, and records load and think times',
     timings[`${level}FramesDuringSearch`] = frames;
     timings[`${level}MaxFrameGapMs`] = Math.round(maxGapMs);
     expect(maxGapMs, `${level}: main thread blocked`).toBeLessThan(250);
+    // Hard controls its own thinking to one second per move.
+    if (level === 'hard') expect(thinkMs, 'hard: search exceeded one second').toBeLessThanOrEqual(1000);
     // A search long enough to measure must have kept the page painting throughout.
     if (thinkMs > 200) expect(frames, `${level}: frames painted during a ${thinkMs} ms search`).toBeGreaterThan(thinkMs / 100);
   }

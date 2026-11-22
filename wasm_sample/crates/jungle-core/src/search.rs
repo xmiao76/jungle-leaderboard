@@ -21,6 +21,12 @@ pub struct SearchParams {
     pub node_budget: u32,
     pub seed: u32,
     pub level: Level,
+    /// Optional wall-clock deadline as `(deadline, clock)` in milliseconds, for the
+    /// standalone game (Hard thinks at most one second). The Arena entrant has no
+    /// clock and always passes `None`, keeping its choices purely budget-bounded
+    /// and reproducible. When the deadline passes the search aborts and returns the
+    /// best move of the deepest completed iteration, exactly as at budget exhaustion.
+    pub deadline: Option<(f64, fn() -> f64)>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -60,6 +66,7 @@ struct Searcher {
     nodes: u32,
     budget: u32,
     aborted: bool,
+    deadline: Option<(f64, fn() -> f64)>,
 }
 
 fn rank(cell: u8) -> usize {
@@ -137,13 +144,23 @@ fn ordered_moves(pos: &Pos) -> Vec<Move> {
 }
 
 impl Searcher {
-    /// Count one visited position, or refuse (and abort) once the budget is spent.
+    /// Count one visited position, or refuse (and abort) once the budget is spent
+    /// or the wall-clock deadline has passed (checked every 256 visits, so the
+    /// overshoot past the deadline stays well under a millisecond of search).
     fn visit(&mut self) -> bool {
         if self.aborted || self.nodes >= self.budget {
             self.aborted = true;
             return false;
         }
         self.nodes += 1;
+        if self.nodes % 256 == 0 {
+            if let Some((deadline, clock)) = self.deadline {
+                if clock() >= deadline {
+                    self.aborted = true;
+                    return false;
+                }
+            }
+        }
         true
     }
 
@@ -194,7 +211,11 @@ pub fn search(cells: &Cells, to_play: Side, quiet: u32, rev: u32, params: Search
     let pos = Pos { cells: *cells, to_play, quiet };
     let mut root = ordered_moves(&pos);
     let fallback = root[0];
-    let mut searcher = Searcher { nodes: 0, budget: params.node_budget, aborted: false };
+    if root.len() == 1 {
+        // One legal move: no search can change the choice, so answer at once.
+        return SearchResult { best: fallback, score: 0, nodes: 0, depth: 0 };
+    }
+    let mut searcher = Searcher { nodes: 0, budget: params.node_budget, aborted: false, deadline: params.deadline };
     let mut rng = Rng::new(params.seed, rev);
     // Fixed per-move noise for this call: variety at Easy, tie-breaking otherwise.
     let amplitude: i32 = match params.level {

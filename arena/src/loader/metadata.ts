@@ -2,7 +2,10 @@ import { RULES_DIGEST, RULES_ID } from '../referee/profile';
 import type { Metadata } from '../referee/types';
 import { MAX_METADATA_CHARS } from './limits';
 
-const FIELDS = ['title', 'gameVersion', 'model', 'codeAgent', 'engineVersion', 'runtime', 'rulesId', 'rulesDigest'] as const;
+const FIELDS = ['title', 'gameVersion', 'model', 'codeAgent', 'githubUrl', 'engineVersion', 'runtime', 'rulesId', 'rulesDigest'] as const;
+
+/** The one metadata field with a required shape: the game's public source repository. */
+const GITHUB_URL = /^https:\/\/github\.com\/[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\/[A-Za-z0-9._-]+\/?$/;
 
 export interface MetadataCheck {
   readonly metadata: Metadata | null;
@@ -48,6 +51,9 @@ export function checkMetadata(raw: unknown): MetadataCheck {
   }
   if (record['rulesDigest'] !== RULES_DIGEST) {
     issues.push(`Rules digest is "${clean['rulesDigest']}", expected ${RULES_DIGEST}.`);
+  }
+  if (clean['githubUrl'] && !GITHUB_URL.test(clean['githubUrl'])) {
+    issues.push('info().githubUrl is not a GitHub repository URL (https://github.com/<owner>/<repo>).');
   }
   return { metadata: clean as unknown as Metadata, issues, rulesCompatible };
 }

@@ -14,6 +14,7 @@ export const METADATA: Metadata = {
   gameVersion: '1.0.0',
   model: 'Test',
   codeAgent: 'Test',
+  githubUrl: 'https://github.com/example/jungle',
   engineVersion: 'fake',
   runtime: 'vitest',
   rulesId: 'desktop-jungle-v1',

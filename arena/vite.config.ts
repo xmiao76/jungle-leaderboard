@@ -62,6 +62,7 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 4322, fs: { allow: [here('..')] } },
+  // The catalog API comes from `npm run dev:full` (wrangler pages dev on :8788).
+  server: { port: 4322, fs: { allow: [here('..')] }, proxy: { '/api': 'http://127.0.0.1:8788' } },
   preview: { port: 4323 },
 });

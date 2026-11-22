@@ -172,9 +172,17 @@ pub fn square_at_pixel(x: i32, y: i32, flipped: bool) -> i32 {
     square_at(x, y, flipped).map_or(-1, i32::from)
 }
 
-/// Pick a move for an encoded snapshot; returns the index into its sorted legal list.
 #[wasm_bindgen]
-pub fn choose(snapshot: &[u8], node_budget: u32, seed: u32, level: u8) -> i32 {
+extern "C" {
+    #[wasm_bindgen(js_namespace = Date, js_name = now)]
+    fn date_now() -> f64;
+}
+
+fn now_ms() -> f64 {
+    date_now()
+}
+
+fn choose_with(snapshot: &[u8], params: SearchParams) -> i32 {
     let Some(s) = decode(snapshot) else { return -1 };
     if s.status != Phase::Playing {
         return -1;
@@ -183,7 +191,26 @@ pub fn choose(snapshot: &[u8], node_budget: u32, seed: u32, level: u8) -> i32 {
     if legal.is_empty() {
         return -1;
     }
-    choose_index(&s, &legal, SearchParams { node_budget, seed, level: level_from(level) }) as i32
+    choose_index(&s, &legal, params) as i32
+}
+
+/// Pick a move for an encoded snapshot; returns the index into its sorted legal list.
+#[wasm_bindgen]
+pub fn choose(snapshot: &[u8], node_budget: u32, seed: u32, level: u8) -> i32 {
+    choose_with(snapshot, SearchParams { node_budget, seed, level: level_from(level), deadline: None })
+}
+
+/// Pick a move within a wall-clock budget: the search runs against a deadline
+/// `within_ms` milliseconds from now (standalone Hard thinks at most one second)
+/// instead of a fixed node budget, and returns the best move of its deepest
+/// completed search.
+#[wasm_bindgen]
+pub fn choose_within(snapshot: &[u8], seed: u32, level: u8, within_ms: f64) -> i32 {
+    let deadline = now_ms() + within_ms.max(0.0);
+    choose_with(
+        snapshot,
+        SearchParams { node_budget: u32::MAX, seed, level: level_from(level), deadline: Some((deadline, now_ms)) },
+    )
 }
 
 /// Legal moves of an encoded snapshot as (src, dst) pairs (parity tests).
@@ -209,11 +236,12 @@ pub fn render_snapshot(snapshot: &[u8], flipped: bool, progress: u16) -> Vec<u8>
 #[wasm_bindgen]
 pub fn identity_json() -> String {
     format!(
-        "{{\"title\":\"{}\",\"gameVersion\":\"{}\",\"model\":\"{}\",\"codeAgent\":\"{}\",\"engineVersion\":\"{}\",\"runtime\":\"{}\",\"rulesId\":\"{}\",\"rulesDigest\":\"{}\"}}",
+        "{{\"title\":\"{}\",\"gameVersion\":\"{}\",\"model\":\"{}\",\"codeAgent\":\"{}\",\"githubUrl\":\"{}\",\"engineVersion\":\"{}\",\"runtime\":\"{}\",\"rulesId\":\"{}\",\"rulesDigest\":\"{}\"}}",
         identity::TITLE,
         identity::GAME_VERSION,
         identity::MODEL,
         identity::CODE_AGENT,
+        identity::GITHUB_URL,
         identity::ENGINE_VERSION,
         identity::RUNTIME,
         RULES_ID,

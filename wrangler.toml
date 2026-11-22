@@ -1,0 +1,21 @@
+# Cloudflare Pages project: the static site in dist/ plus the Arena catalog API in functions/.
+# `wrangler pages dev` (npm run dev:full) uses these bindings with local state in .wrangler/;
+# deploys use the real resources.
+name = "jungle-leaderboard"
+pages_build_output_dir = "dist"
+# Newest date the pinned workerd supports; raise it only together with wrangler.
+compatibility_date = "2026-08-18"
+
+# Entrant information (migrations/). The all-zero id is a local-only placeholder until the
+# production database is created with `wrangler d1 create jungle-arena`;
+# scripts/check-deploy-config.mjs makes `npm run deploy` refuse to run while it is here.
+[[d1_databases]]
+binding = "DB"
+database_name = "jungle-arena"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# Entrant .wasm bytes, one object per entrant, keyed "<sha256>.wasm".
+[[r2_buckets]]
+binding = "ENTRANTS"
+bucket_name = "jungle-arena-entrants"

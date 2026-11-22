@@ -17,11 +17,10 @@ import { SECTION_TITLE } from '../ui/classes';
           even if its title and version are the same. Clearing site data removes them.
         </p>
         <p>
-          The <span class="font-semibold text-fg">public catalog</span> is part of the site itself: binaries committed to the repository
-          and listed in <code class="font-mono text-xs">catalog/manifest.json</code> with their hashes. A maintainer adds one with
-          <code class="font-mono text-xs">npm run catalog:add -- path/to/file.wasm</code>, which runs the same checks, and it appears for
-          everyone after the next deployment. Every download is verified against its manifest hash. A shared catalog where any visitor’s
-          upload is published instantly would need a storage service beyond this static site, so it is deliberately not offered.
+          The <span class="font-semibold text-fg">public catalog</span> is the Arena’s shared database: every program in it is stored
+          under its SHA-256 and listed with that hash, and every download is verified against it. A maintainer adds programs with
+          <code class="font-mono text-xs">npm run catalog:add -- path/to/file.wasm</code>, which runs the same checks; one of them is the
+          reference program that conformance runs play against. Files uploaded on this page stay on this device.
         </p>
       </div>
       <div class="space-y-4">

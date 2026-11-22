@@ -128,18 +128,25 @@ The Arena was built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in
 - **On this device** — files you import. They are validated, then saved in this browser's IndexedDB
   by content hash and immediately usable. Identical bytes reuse the entry; a new hash is a new entry
   even if the title and version are unchanged. Nothing is uploaded anywhere.
-- **Public catalog** — binaries committed under [`arena/public/catalog/`](arena/public/catalog/) and
-  listed with their hashes in `manifest.json`. A maintainer adds one with
-  `npm run catalog:add -- path/to/file.wasm` (the same checks a browser import runs, plus a smoke test
-  in a killable child process); it goes live with the next `npm run deploy`. Every download is
-  verified against its manifest hash. `npm test` re-verifies every catalog file.
+- **Public catalog** — the Arena's database. A Pages Function serves the list from Cloudflare D1
+  (`/api/catalog/manifest.json`) and each program's bytes from R2 (`/api/catalog/<sha256>.wasm`);
+  every download is verified against its listed hash. Curated programs live in
+  [`seed/catalog/`](seed/catalog/): a maintainer adds one with `npm run catalog:add -- path/to/file.wasm`
+  (the same checks a browser import runs, plus a smoke test in a killable child process) and loads it
+  with `npm run db:seed -- --remote`. `npm test` re-verifies every seed file.
 
-A shared catalog where any visitor's upload is published instantly would need a storage service
-beyond this static site, so it is deliberately out of scope.
+Publishing visitors' uploads to the shared catalog, after a full functional test, is planned in
+[`docs/PLAN-shared-catalog.md`](docs/PLAN-shared-catalog.md).
 
 Current public entry: the **Jungle — Claude-Opus-5.5 sample** 1.0.0, built in
 [`wasm_sample/`](wasm_sample/) (animal art: Twemoji, CC-BY 4.0); its hash and size are in
-`manifest.json`. Any other program is played by uploading it.
+`seed/catalog/seed.json`, and it is the reference program conformance runs play against.
+
+**Running the catalog locally.** `npm run build`, then `npm run dev:full` serves the site and its API
+at http://127.0.0.1:8788/ with local D1/R2 under `.wrangler/state` (migrated and seeded on first run).
+To reset it, delete that folder, or run `npm run db:migrate -- --local` and `npm run db:seed -- --local`.
+On Windows, Cloudflare's local runtime needs the Visual C++ 2015+ runtime
+(`winget install Microsoft.VCRedist.2015+.x64`).
 
 ### How it works
 
@@ -194,7 +201,8 @@ npm install
 npm run dev        # leaderboard dev server at http://localhost:4321
 npm run dev:arena  # Arena dev server at http://localhost:4322
 npm run build      # rules digest check, type-checks, then leaderboard + Arena into dist/
-npm run preview    # serve dist/ at http://127.0.0.1:4400/ (Arena at /arena/)
+npm run preview    # serve dist/ at http://127.0.0.1:4400/ (static only: no catalog API)
+npm run dev:full   # dist/ + catalog API + local D1/R2 at http://127.0.0.1:8788/ (Arena at /arena/)
 npm run check      # astro check + vue-tsc on their own
 npm test           # Vitest: leaderboard, referee, loader, controller, storage, catalog, replay
 npm run test:coverage
@@ -238,8 +246,12 @@ src/
   styles/global.css     Base styles, responsive table rules
 arena/                  The Arena: Vue 3 + Vite app built to dist/arena/ (base './')
   src/                  referee, loader, match, workers, storage, catalog, replay, components
-  public/catalog/       The public catalog: binaries + manifest.json
   test-fixtures/        Test-only components: a small well-behaved entrant and deliberately broken ones
+functions/              Pages Functions: the catalog API (/api/catalog/…)
+server/                 Catalog API logic and its tests (real local D1/R2)
+migrations/             D1 schema
+seed/catalog/           Curated catalog programs + seed.json, loaded by `npm run db:seed`
+wrangler.toml           Pages config and the D1/R2 bindings
 wit/jungle.wit          The Arena contract (verbatim from the brief)
 sdk/                    Rules profile, fixtures and protocol documentation
 scripts/                Build, catalog, conformance and static-server tools

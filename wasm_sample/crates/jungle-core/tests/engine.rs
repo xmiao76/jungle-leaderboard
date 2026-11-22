@@ -6,7 +6,7 @@ use jungle_core::search::{choose_index, search, SearchParams};
 use jungle_core::*;
 
 fn params(budget: u32, seed: u32) -> SearchParams {
-    SearchParams { node_budget: budget, seed, level: Level::Medium }
+    SearchParams { node_budget: budget, seed, level: Level::Medium, deadline: None }
 }
 
 fn play_first(n: usize) -> Snapshot {
@@ -38,6 +38,22 @@ fn never_exceeds_the_node_budget() {
         assert_eq!(r.nodes, budget, "budget {budget} not fully used");
         assert!(legal_moves(&s).contains(&r.best));
     }
+}
+
+#[test]
+fn a_passed_deadline_aborts_the_search_and_still_returns_a_legal_move() {
+    // A clock that only ever moves forward, one millisecond per call: the deadline
+    // check fires at most every 1024 visits, so the search must stop far below the
+    // huge node budget and keep the best move of its last completed iteration.
+    static NOW: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    fn clock() -> f64 {
+        NOW.fetch_add(1, std::sync::atomic::Ordering::Relaxed) as f64
+    }
+    let s = play_first(3);
+    let p = SearchParams { node_budget: u32::MAX, seed: 1, level: Level::Hard, deadline: Some((50.0, clock)) };
+    let r = search(&cells_of(&s.board), s.to_play, s.no_capture_plies, s.rev, p);
+    assert!(legal_moves(&s).contains(&r.best));
+    assert!(r.nodes < 200_000, "deadline did not stop the search: {} nodes", r.nodes);
 }
 
 #[test]

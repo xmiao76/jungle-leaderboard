@@ -1,0 +1,21 @@
+{
+  // Type-checks the Pages Functions and the server modules they import against the Workers
+  // runtime and the bindings in wrangler.toml (worker-configuration.d.ts, from `npm run cf-typegen`).
+  // Server tests run under Node in Vitest and are excluded here.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023"],
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["./**/*.ts", "../server/**/*.ts", "../worker-configuration.d.ts"],
+  "exclude": ["../server/**/*.test.ts", "../server/**/*.test-support.ts"]
+}

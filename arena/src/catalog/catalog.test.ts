@@ -11,6 +11,7 @@ const entry = (over: Partial<PublicEntry> = {}): PublicEntry => ({
   addedAt: '2026-11-20',
   provenance: null,
   credits: null,
+  reference: false,
   ...over,
 });
 
@@ -31,6 +32,15 @@ describe('parseManifest', () => {
     expect(issues).toHaveLength(3);
   });
 
+  it('reads the reference flag, treating anything but true as false', () => {
+    const { manifest } = parseManifest({
+      format: 'jungle-arena-catalog',
+      version: 1,
+      entries: [entry({ sha256: sha('1'), reference: true }), { ...entry({ sha256: sha('2') }), reference: 'yes' }, { ...entry({ sha256: sha('3') }), reference: undefined }],
+    });
+    expect(manifest?.entries.map((e) => e.reference)).toEqual([true, false, false]);
+  });
+
   it('rejects an unknown format outright', () => {
     expect(parseManifest({ format: 'other' }).manifest).toBeNull();
   });
@@ -43,8 +53,12 @@ describe('catalog merging and grouping', () => {
       { sha256: sha('b'), size: 11, metadata: { ...METADATA, gameVersion: '2.0.0' }, importedAt: '2026-11-21' },
     ]);
     expect(merged).toHaveLength(2);
-    expect(merged[0]).toMatchObject({ origin: 'public', onDevice: true });
-    expect(merged[1]).toMatchObject({ origin: 'device', sha256: sha('b') });
+    expect(merged[0]).toMatchObject({ origin: 'public', onDevice: true, reference: false });
+    expect(merged[1]).toMatchObject({ origin: 'device', sha256: sha('b'), reference: false });
+  });
+
+  it('carries the reference flag from the public catalog', () => {
+    expect(mergeCatalog([entry({ reference: true })], [])[0]).toMatchObject({ reference: true });
   });
 
   it('treats a new hash with an unchanged title and version as a separate entry', () => {

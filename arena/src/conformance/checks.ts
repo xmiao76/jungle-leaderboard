@@ -3,7 +3,7 @@
  * loader, seat workers, referee and match controller the Arena uses. Every entrant gets
  * the same settings.
  */
-import { fetchPublicBinary, fetchPublicManifest, groupByTitle, mergeCatalog } from '../catalog/catalog';
+import { fetchPublicBinary, fetchPublicManifest } from '../catalog/catalog';
 import type { TranspiledEntrant } from '../loader/guest';
 import { DEADLINES } from '../loader/limits';
 import { MatchController, type MatchEntrant, type MatchResult } from '../match/controller';
@@ -15,8 +15,8 @@ import { createRefereeWorker, createSeatWorker, createLoaderWorker } from '../wo
 import { LoaderClient, realClock } from '../workers/rpc';
 
 export const CONFORMANCE_SETTINGS = { difficulty: 'medium', seed: 20_261_120, nodeBudget: 20_000, thinkDeadlineMs: 5_000 } as const;
-/** How the report names the reference opponent: the public catalog's first program. */
-export const OPPONENT_LABEL = 'the first program in the public catalog';
+/** How the report names the opponent: the catalog entry flagged as the reference program. */
+export const OPPONENT_LABEL = 'the reference program in the public catalog';
 
 export interface CheckResult {
   readonly name: string;
@@ -104,15 +104,15 @@ export async function twoInstancesAndFlip(artifact: TranspiledEntrant): Promise<
 }
 
 /**
- * The reference opponent: the public catalog's first program (by title, newest version),
- * hash-verified. Every entrant checked on one deployment meets the same opponent.
+ * The reference opponent: the one catalog entry flagged `reference` (chosen by a maintainer in
+ * seed/catalog/seed.json, never by uploads), hash-verified. Every entrant meets the same opponent.
  */
 export async function loadOpponent(): Promise<MatchEntrant> {
   const base = catalogBase();
   const { entries, error } = await fetchPublicManifest(base);
   if (error) throw new Error(error);
-  const entry = groupByTitle(mergeCatalog(entries, []))[0]?.versions[0];
-  if (!entry?.file) throw new Error('The public catalog is empty, so there is no reference opponent.');
+  const entry = entries.find((e) => e.reference);
+  if (!entry) throw new Error('The public catalog has no reference program to play against.');
   const bytes = await fetchPublicBinary({ file: entry.file, sha256: entry.sha256 }, base);
   const loader = new LoaderClient(createLoaderWorker);
   try {

@@ -1,7 +1,8 @@
 /**
  * Two catalogs, one picker:
- * - "Public catalog": version-controlled binaries listed in catalog/manifest.json and
- *   published with the site. Every fetch is verified against the manifest hash.
+ * - "Public catalog": every entrant admitted to the Arena's database, served by the catalog API
+ *   (server/catalog-read.ts) as manifest.json plus one <sha256>.wasm per entrant. Every fetch is
+ *   verified against the listed hash.
  * - "On this device": binaries this browser imported, stored in IndexedDB by hash.
  * A hash is an identity: the same bytes appear once, a new hash is a new entry even if
  * its title and version string are unchanged.
@@ -27,6 +28,8 @@ export interface PublicEntry {
   readonly addedAt: string;
   readonly provenance: Provenance | null;
   readonly credits: string | null;
+  /** The program every upload test plays against (at most one entry). */
+  readonly reference: boolean;
 }
 
 export interface PublicManifest {
@@ -48,6 +51,7 @@ export interface CatalogEntry {
   readonly file: string | null;
   readonly provenance: Provenance | null;
   readonly credits: string | null;
+  readonly reference: boolean;
 }
 
 export interface CatalogGroup {
@@ -82,6 +86,7 @@ export function parseManifest(data: unknown): { manifest: PublicManifest | null;
         addedAt: typeof e['addedAt'] === 'string' ? e['addedAt'] : '',
         provenance: (e['provenance'] as Provenance | undefined) ?? null,
         credits: typeof e['credits'] === 'string' ? e['credits'] : null,
+        reference: e['reference'] === true,
       });
     }
   }
@@ -143,11 +148,12 @@ export function mergeCatalog(
     file: p.file,
     provenance: p.provenance,
     credits: p.credits,
+    reference: p.reference,
   }));
   const publicHashes = new Set(publicEntries.map((p) => p.sha256));
   for (const d of deviceEntries) {
     if (publicHashes.has(d.sha256)) continue;
-    merged.push({ sha256: d.sha256, size: d.size, metadata: d.metadata, origin: 'device', onDevice: true, addedAt: d.importedAt, file: null, provenance: null, credits: null });
+    merged.push({ sha256: d.sha256, size: d.size, metadata: d.metadata, origin: 'device', onDevice: true, addedAt: d.importedAt, file: null, provenance: null, credits: null, reference: false });
   }
   return merged;
 }

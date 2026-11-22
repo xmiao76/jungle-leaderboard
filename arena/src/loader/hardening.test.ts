@@ -59,6 +59,16 @@ describe('metadata identity', () => {
     expect(check.issues.join()).toMatch(/Rules ID/);
   });
 
+  it('requires githubUrl to be a GitHub repository URL', () => {
+    expect(checkMetadata(METADATA).issues).toEqual([]);
+    for (const githubUrl of ['https://example.com/a/b', 'http://github.com/a/b', 'https://github.com/onlyowner', 'github.com/a/b', 'https://github.com/a/b/tree/main', '']) {
+      const check = checkMetadata({ ...METADATA, githubUrl });
+      expect(check.issues.join(), githubUrl).toMatch(/githubUrl/);
+    }
+    const { githubUrl: _dropped, ...without } = METADATA;
+    expect(checkMetadata(without).issues.join()).toMatch(/githubUrl/);
+  });
+
   it('strips zero-width and bidi characters from displayed text', () => {
     const check = checkMetadata({ ...METADATA, title: 'Tit​le‮ ' });
     expect(check.metadata?.title).toBe('Title');
