@@ -30,6 +30,8 @@ import { arenaUrl, catalogBase, parsePlayQuery, playUrl, selectionFromQuery, typ
 import { LoaderClient, realClock } from '../workers/rpc';
 
 export const ARENA_VERSION = '1.0.0';
+/** Matches start at full strength: the brief requires `hard` to be each program's strongest play. */
+export const DEFAULT_DIFFICULTY: Level = 'hard';
 
 export type { Speed } from './paths';
 export const SPEEDS: Readonly<Record<Speed, AnimationPlan>> = {
@@ -101,7 +103,7 @@ export const state: ArenaState = reactive({
   settings: {
     leftSide: 'red',
     firstSide: 'red',
-    difficulty: 'medium',
+    difficulty: DEFAULT_DIFFICULTY,
     seed: randomSeed(),
     nodeBudget: DEFAULT_NODE_BUDGET,
     thinkDeadlineMs: DEADLINES.think,
@@ -517,8 +519,8 @@ function gameEnded(
   series.summary = summary;
   series.text = describeSeries(summary, { left: entrantName(picked.left), right: entrantName(picked.right) });
   series.details = played.map(describeSeriesGame);
+  // The play page shows the full result in MatchResultDialog; this line is for screen readers.
   state.announcement = series.text;
-  notify(summary.complete ? 'info' : 'warning', summary.complete ? 'Match result' : 'Match incomplete', [series.text, ...series.details].join(' '));
 }
 
 function disposeController(): void {

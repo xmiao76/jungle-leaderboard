@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts', 'arena/src/**/*.test.ts', 'server/**/*.test.ts', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.test.ts', 'arena/src/**/*.test.ts', 'server/**/*.test.ts', 'scripts/**/*.test.ts', 'scripts/**/*.test.mjs'],
     exclude: ['**/node_modules/**', 'dist/**', 'wasm_sample/**', 'tests/e2e/**'],
     coverage: {
       provider: 'v8',

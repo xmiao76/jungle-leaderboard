@@ -143,10 +143,11 @@ Current public entry: the **Jungle — Claude-Opus-5.5 sample** 1.0.0, built in
 `seed/catalog/seed.json`, and it is the reference program conformance runs play against.
 
 **Running the catalog locally.** `npm run build`, then `npm run dev:full` serves the site and its API
-at http://127.0.0.1:8788/ with local D1/R2 under `.wrangler/state` (migrated and seeded on first run).
-To reset it, delete that folder, or run `npm run db:migrate -- --local` and `npm run db:seed -- --local`.
-On Windows, Cloudflare's local runtime needs the Visual C++ 2015+ runtime
-(`winget install Microsoft.VCRedist.2015+.x64`).
+at http://127.0.0.1:8788/ with local D1/R2 under `.wrangler/state`. Every start applies any new
+migrations and reloads the seed catalog, so the local database keeps up with code changes. To start
+from an empty catalog, stop it and delete `.wrangler/state`. On Windows, Cloudflare's local runtime
+needs the Visual C++ 2015+ runtime (`winget install Microsoft.VCRedist.2015+.x64`). See
+[Running locally after a code change](#running-locally-after-a-code-change).
 
 ### How it works
 
@@ -203,19 +204,58 @@ npm run dev:arena  # Arena dev server at http://localhost:4322
 npm run build      # rules digest check, type-checks, then leaderboard + Arena into dist/
 npm run preview    # serve dist/ at http://127.0.0.1:4400/ (static only: no catalog API)
 npm run dev:full   # dist/ + catalog API + local D1/R2 at http://127.0.0.1:8788/ (Arena at /arena/)
-npm run check      # astro check + vue-tsc on their own
-npm test           # Vitest: leaderboard, referee, loader, controller, storage, catalog, replay
+npm run check      # astro check + vue-tsc + the Functions type check, on their own
+npm test           # Vitest: leaderboard, referee, loader, controller, storage, catalog, replay, catalog API
 npm run test:coverage
-npm run test:e2e   # Playwright against dist/ served from a nested subpath (build first)
+npm run test:e2e   # Playwright against dist/ from a nested subpath, catalog API on fresh local D1/R2 (build first)
 npm run test:watch # re-run tests on change
 ```
 
-Arena test fixtures and the public catalog:
+### Running locally after a code change
+
+The quickest full check of a change is the built site with its catalog API:
+
+```bash
+npm run build      # rebuild dist/ with the change
+npm run dev:full   # site + catalog API + local D1/R2 at http://127.0.0.1:8788/
+```
+
+Open http://127.0.0.1:8788/arena/ for the Arena (the leaderboard is at http://127.0.0.1:8788/).
+`dev:full` serves the built `dist/`, so after each further change stop it (Ctrl+C), run
+`npm run build`, and start it again. Each start also applies new migrations and reloads the seed
+catalog.
+
+For Arena interface work, a faster loop needs no rebuild:
+
+```bash
+npm run dev:full   # terminal 1: provides /api (build once first)
+npm run dev:arena  # terminal 2: Arena with hot reload at http://localhost:4322
+```
+
+The Arena dev server forwards `/api` to `dev:full`, so edits to `arena/src/` appear immediately.
+For the leaderboard page alone, `npm run dev` (http://localhost:4321) is enough. After changing
+`functions/` or `server/`, restart `dev:full`; after changing `wrangler.toml`, also run
+`npm run cf-typegen`.
+
+**If port 8788 is busy** (for example, another project's dev server), `dev:full` stops at once with
+`port 8788 is already in use by another program`. Stop that program, or use another port:
+
+```bash
+npm run dev:full -- --port 8790   # then open http://127.0.0.1:8790/arena/
+```
+
+To use another port with `dev:arena` too, set `ARENA_API_PORT` for both commands (PowerShell:
+`$env:ARENA_API_PORT = 8790`; bash: `export ARENA_API_PORT=8790`). `dev:full` prints
+`site and catalog API at …` once it is ready, usually within ten seconds.
+
+### Arena test fixtures and the catalog
 
 ```bash
 npm run build:fixtures                   # rebuild arena/test-fixtures/ from tests/test-entrant/ (needs Rust 1.94 + wasm32-unknown-unknown)
-npm run catalog:add -- path/to/file.wasm # admit a binary to the public catalog
-npm run catalog:verify                   # every catalog file matches its manifest hash and the contract
+npm run catalog:add -- path/to/file.wasm # add a binary to seed/catalog/ after the admission checks (--reference: make it the reference opponent)
+npm run catalog:verify                   # every seed file matches its hash in seed.json and the contract; exactly one reference
+npm run db:migrate -- --local            # apply migrations/ to local D1 (--remote: production)
+npm run db:seed -- --local               # load seed/catalog/ into local D1/R2 (--remote: production)
 npm run conformance -- path/to/file.wasm [--browser chromium|webkit|chrome|msedge|firefox] [--url <deployed arena>]
 ```
 

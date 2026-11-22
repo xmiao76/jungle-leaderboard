@@ -35,7 +35,7 @@ Two goals rank above everything else this brief leaves open. Both are part of ac
 
 **Technology is open.** These goals do not prescribe how to reach them. Choose any programming language, framework, UI toolkit, rendering technology, game or search engine, machine-learning approach, build system and test tooling, in any combination. The only fixed points are the outputs this brief defines: a static web game, and a WebAssembly component that satisfies the contract below. Routes this brief mentions, such as Rust with `wit-bindgen`, are examples known to work, not requirements.
 
-## Jungle v1 rulebook and test data
+## Jungle v2 rulebook and test data
 
 This section defines the match variant for both standalone and Arena play. Start in a new repository. The WIT, board, rule identity and expected results in this document are sufficient to implement and test either side of the interface. Create or license and package the artwork and sounds your deliverable uses.
 
@@ -47,16 +47,17 @@ This section defines the match variant for both standalone and Arena play. Start
 - Only rats can occupy water. A rat may step between water and an empty land square in either direction. An occupied destination across a water/land boundary cannot be captured. A swimming rat can capture another rat in adjacent water.
 - A lion or tiger starting on land and facing adjacent water may jump straight to the first land square beyond the continuous water run, applying normal landing/capture rules. A rat of either color on any intermediate square blocks the jump. **Lion: two or three intervening water squares. Tiger: exactly two.** On this portrait board a short jump is `21 → 24` (horizontal) and a long jump is `15 → 43` (vertical). Apply the same length rule in reverse and on both rivers.
 - On land, animals capture equal or lower ranks. Rank increases from rat (1) to elephant (8) in the profile order. An untrapped rat can take an elephant; an elephant cannot take an untrapped rat. A piece on an **opponent-owned** trap has effective rank zero. Compare the attacker's source and defender's destination before moving. Any attacker can capture a trapped defender; a trapped attacker cannot capture an untrapped defender while leaving its trap. A surviving piece regains its ordinary rank upon exiting. Friendly traps do not reduce rank.
-- After a legal move, remove a captured piece, update board and history, advance the revision, and set the quiet counter to zero on capture or increment it by one otherwise. Check, in order: **enemy den reached**, **opponent has zero pieces**, **opponent has zero legal moves**, **100 consecutive plies without capture**. The first three are wins for the mover; the last is a draw. A ply is one side's move. There is no independent repetition result. Initial board counters are zero. For a live position continue with the opponent. A match ends as soon as a terminal result is committed.
-- Use the wire reason strings `den`, `elimination`, `immobilization`, or `no-capture` for these results and an empty string while playing. A forfeit awards the game to the opposing seat and uses `timeout`, `trap`, or `invalid-move`. A host/referee failure is a system error outside the board result. For every committed legal move set `to-play` to the opponent, including in the terminal snapshot. A forfeit retains the last board, turn, counters and history and increments the revision once.
+- After a legal move, remove a captured piece, update board and history, advance the revision, and set the quiet counter to zero on capture or increment it by one otherwise. Check, in order: **enemy den reached**, **opponent has zero pieces**, **opponent has zero legal moves**, **a position repeated for the third time**, **100 consecutive plies without capture**. The first three are wins for the mover; the last two are draws. A ply is one side's move. Initial board counters are zero. For a live position continue with the opponent. A match ends as soon as a terminal result is committed.
+- **Repetition draw.** If the two sides fall into a loop that keeps recreating the same situation, the referee declares the game drawn. A position is the contents of all 63 squares together with the side to move. Count every position of the game: the starting position (revision 0, or the given board of a synthetic test position) and the position after each committed move. Repeats need not be consecutive. As soon as a committed move produces a position for the third time, the game is drawn with reason `repetition`. A capture never repeats a position, because it leaves fewer pieces on the board. Every snapshot carries `first-side` and the complete `history`, so an entrant can replay the game from the opening and count positions itself: an engine that is ahead should avoid a third repetition, and one that is behind may seek it.
+- Use the wire reason strings `den`, `elimination`, `immobilization`, `repetition`, or `no-capture` for these results and an empty string while playing. A forfeit awards the game to the opposing seat and uses `timeout`, `trap`, or `invalid-move`. A host/referee failure is a system error outside the board result. For every committed legal move set `to-play` to the opponent, including in the terminal snapshot. A forfeit retains the last board, turn, counters and history and increments the revision once.
 
 ### Canonical rules profile
 
-Use `desktop-jungle-v1` as the literal wire ID and `a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63` as `rules-digest`. Both are ready to use. To reproduce the digest, hash the following JSON block only, including one final LF, as UTF-8 with LF line endings and no BOM. Preserve its whitespace. SHA-256 of the entrant's binary is a separate value.
+Use `desktop-jungle-v2` as the literal wire ID and `a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57` as `rules-digest`. Both are ready to use. This profile replaces `desktop-jungle-v1`, which had no repetition draw; the two are not interchangeable. To reproduce the digest, hash the following JSON block only, including one final LF, as UTF-8 with LF line endings and no BOM. Preserve its whitespace. SHA-256 of the entrant's binary is a separate value.
 
 ```json
 {
-  "id": "desktop-jungle-v1",
+  "id": "desktop-jungle-v2",
   "size": [7, 9],
   "index": "row*7+col; origin top-left",
   "defaultFirst": "red",
@@ -72,8 +73,9 @@ Use `desktop-jungle-v1` as the literal wire ID and `a0936f1eee833dd11107ed581dc7
   "trapCapture": "pre-move ranks; enemy trap sets rank to zero; trapped defender capturable by any rank; trapped attacker cannot capture an untrapped defender",
   "normalCapture": "rat beats elephant; elephant cannot take rat; otherwise attacker rank >= defender rank",
   "noCapturePlies": 100,
-  "repetition": "no separate adjudication",
-  "terminalOrder": ["den", "elimination", "immobilization", "no-capture"]
+  "repetition": "draw when a committed move produces a position (all 63 squares and the side to move) for the third time in the game",
+  "repetitionOccurrences": 3,
+  "terminalOrder": ["den", "elimination", "immobilization", "repetition", "no-capture"]
 }
 ```
 
@@ -109,7 +111,7 @@ Each row below is `[name, board, candidateMove, expectedLegal]`. The board objec
 ]
 ```
 
-For adjudication tests, apply the indicated legal Red move to the sparse position, starting with the given quiet counter. Verify the board, the counter and the result. A normal commit adds exactly one history item and advances the revision once. In the table, cells such as `R.cat@2` denote a red cat on square 2.
+For adjudication tests, apply the indicated legal Red move to the sparse position, starting with the given quiet counter. Verify the board, the counter and the result. A normal commit adds exactly one history item and advances the revision once. In the table, cells such as `R.cat@2` denote a red cat on square 2. The repetition rows list several plies: apply them in order from the given position, Red first, alternating sides.
 
 | Position | Move | Quiet count before → after | Expected status / winner / reason |
 |---|---|---|---|
@@ -119,6 +121,9 @@ For adjudication tests, apply the indicated legal Red move to the sparse positio
 | R.cat@42, B.dog@6 | 42 → 43 | 98 → 99 | playing / none / empty string |
 | R.cat@42, B.dog@6 | 42 → 43 | 99 → 100 | drawn / none / no-capture |
 | R.wolf@42, B.cat@43, B.dog@6 | 42 → 43 | 99 → 0 | playing / none / empty string |
+| R.cat@42, B.dog@6 | 42 → 43, 6 → 5, 43 → 42, 5 → 6, 42 → 43, 6 → 5, 43 → 42 | 0 → 7 | playing / none / empty string (no position has occurred three times) |
+| R.cat@42, B.dog@6 | the seven plies above, then 5 → 6 | 0 → 8 | drawn / none / repetition (the starting position, Red to move, occurs for the third time; revision 8, `to-play` Red) |
+| R.cat@42, B.dog@6 | the same eight plies | 92 → 100 | drawn / none / repetition (checked before the no-capture limit) |
 
 **Opening handshake.** Each side has 24 legal moves from the untouched opening when selected to start. With Red first and the contractual sort order, index 0 is `42 → 35`; index 23 is `62 → 61`. With Blue first, index 0 is `0 → 1`. For the default Red opening, send index 0 once. At revision 1, square 42 is empty, 35 contains the red elephant, the quiet counter is 1, history is `[[42,35]]` in pair notation, and Blue is next. Both panes receive that same revision. Replaying it with either pane flipped preserves the wire values.
 
@@ -129,7 +134,7 @@ For adjudication tests, apply the indicated legal Red move to the sparse positio
 - Show a loading screen with meaningful progress while the game loads its engine and assets. Enable controls immediately when ready. Use two-click select-then-move input, selection highlights, legal destination and capture indicators, turn and result messages, a move history and smooth move/capture animations.
 - Draw recognizable animals and distinct land, river, trap and den tiles. Label every piece with its short English animal name, readable on both colors and moving with it. Create original visuals and sounds or package assets licensed for redistribution. Include any required credits. Bundle the match art in the uploaded component. The finished desktop UI must be beautiful and suitable for a public demo (see **Quality goals**); touch and smaller screens are a phase-two enhancement.
 - Support undo, board flip and mute. Undo restores a valid earlier state, including history, counters and turn; define its behavior in each mode. Suppress stale AI replies after undo/restart. Flip changes square-to-pixel and pointer-to-square mappings together, while preserving game state, sides and first mover. Unlock move/capture/win audio after a user gesture.
-- The main menu shows **model, code agent, engine version, and runtime**, and a link to the game's GitHub repository — the same URL `info()` reports as `github-url`. Include a “How to play” section with both win conditions, loss on no legal moves, no-capture draw, rank order, rat/elephant exception, swimming, jumps and rat blocking, traps, own den, select/move/capture indicators, undo, flip and mute.
+- The main menu shows **model, code agent, engine version, and runtime**, and a link to the game's GitHub repository — the same URL `info()` reports as `github-url`. Include a “How to play” section with both win conditions, loss on no legal moves, no-capture draw, repetition draw (the same position for the third time), rank order, rat/elephant exception, swimming, jumps and rat blocking, traps, own den, select/move/capture indicators, undo, flip and mute.
 - Include a clearly labeled **Download Arena .wasm** action and brief upload instructions: open the Arena's Upload page, choose the file, wait for every admission stage to pass, then pick **Play in left seat** or **Play in right seat**. Show the same title, version, model, code agent, GitHub URL and rules identity that the file reports via `info()`, and the file's SHA-256. In the single-file local build this action must work offline and produce exactly the release file's bytes and filename.
 
 ## Architecture and build targets
@@ -235,7 +240,7 @@ The Arena's Upload page runs these checks in order and rejects the file with the
 | 3 | Identity | The Arena computes the file's SHA-256, which identifies the entry everywhere. Identical bytes reuse an entry; any change makes a new one. |
 | 4 | Contract | The component's imports and exports, with fully expanded types, equal those of a component built from the WIT above: exactly one import, `jungle:arena/display@1.0.0`, and exactly one export, `jungle:arena/game@1.0.0`, with every function, record, enum, field and case named and typed as written. Any other import (any WASI interface, for example), any other export, a missing function or a changed type is rejected. |
 | 5 | Transpilation | jco (`@bytecodealliance/jco-transpile` 0.24.0) turns the component into browser JavaScript within 30 s. Use only plain synchronous Component Model features: no async functions, streams, futures or fixed-size lists. |
-| 6 | Metadata | On a fresh instance, `info()` returns `rules-id` exactly `desktop-jungle-v1` and `rules-digest` exactly the digest above, compared byte for byte with no padding or trailing characters. Every other field is non-empty, except `engine-version`, which may be empty, and at most 160 characters. That includes `github-url`, which is required and must be the game's public GitHub repository URL, starting `https://github.com/`. Control and invisible formatting characters are stripped before display. |
+| 6 | Metadata | On a fresh instance, `info()` returns `rules-id` exactly `desktop-jungle-v2` and `rules-digest` exactly the digest above, compared byte for byte with no padding or trailing characters. Every other field is non-empty, except `engine-version`, which may be empty, and at most 160 characters. That includes `github-url`, which is required and must be the game's public GitHub repository URL, starting `https://github.com/`. Control and invisible formatting characters are stripped before display. |
 | 7 | Smoke test | Within 20 s on that instance: `init({seat: red, difficulty: medium, seed: 1})` returns; `choose-move` on the opening with Red to move, its 24-move legal list and a 1,000-node budget returns an index from 0 to 23; `render(opening, false, 1000)` and `render(opening, true, 1000)` each call `display.present` exactly once with a 448 × 576 frame of exactly 1,032,192 bytes. Nothing traps. |
 
 After admission the Upload page shows the metadata, the rules compatibility and both opening frames, and lists the entry under “On this device”. The Arena groups entries by `title`, so keep the title identical across releases and change `game-version` for each release; a visitor can then play a release against an older one.
@@ -247,7 +252,7 @@ The Arena's own conformance runner checks these, and real matches depend on them
 - **Deterministic choices.** For the same snapshot, legal list, seed, difficulty and node budget, `choose-move` returns the same index: in a fresh instance, in a second instance of the same file, and after any number of `render` calls in between.
 - **Isolated instances.** Two instances of one file in the same page never share state.
 - **Flip changes only the view.** The flipped settled frame differs from the unflipped one, and rendering the same snapshot unflipped twice produces identical bytes.
-- **Complete games.** Full matches at difficulty medium, seed 20261120, 20,000 nodes and 5 s per move — as Red against another entrant, as Blue, and against itself — end in a referee result (den, elimination, immobilization or the 100-ply no-capture draw) with no forfeit and with every revision rendered by both boards.
+- **Complete games.** Full matches at difficulty medium, seed 20261120, 20,000 nodes and 5 s per move — as Red against another entrant, as Blue, and against itself — end in a referee result (den, elimination, immobilization, or a repetition or 100-ply no-capture draw) with no forfeit and with every revision rendered by both boards.
 
 ## Implementation details for the entrant
 
@@ -274,7 +279,7 @@ Frames are RGBA8, top row first, with straight (not premultiplied) alpha. The Ar
 
 | Milestone | Required evidence |
 |---|---|
-| 1. Rules and baseline | Save the canonical rules profile as `rules/desktop-jungle-v1.json` with exactly the bytes above and fail the build if its SHA-256 differs from the rules digest. Use the team's test tools in CI to exercise the opening and portable positions in this document. Compare legal moves, captures, counters and terminal outcomes to the expected results specified here. Record the rules digest, game revision and toolchain. |
+| 1. Rules and baseline | Save the canonical rules profile as `rules/desktop-jungle-v2.json` with exactly the bytes above and fail the build if its SHA-256 differs from the rules digest. Use the team's test tools in CI to exercise the opening and portable positions in this document. Compare legal moves, captures, counters and terminal outcomes to the expected results specified here. Record the rules digest, game revision and toolchain. |
 | 2. Playable standalone | Smoke-test the production browser build and exercise a real legal AI move. Unit-test flipped/unflipped pointer mapping, both first-mover choices, undo during thought and request IDs. Measure cold load and AI response by difficulty, and verify that every Hard move in a full game arrives within 1 s of its request. Confirm input, board animations, and menus remain responsive while the AI thinks. Review screenshots of every screen against the UI quality goal and fix what looks unfinished. |
 | 3. Arena binary | Inspect its embedded WIT (for example, `wasm-tools component wit`). Instantiate the artifact with only the declared `display` import, read metadata, initialize, select a legal move, capture its RGBA frame, and flip the board. Exercise both seats, two copies of one file, a jump, capture, terminal snapshot and direct replay seek. Check label/art placement and that rendering does not mutate the strategy. Run every item of the Arena admission checklist and the match behaviour above against the release file in the test suite. Record a strength report: the release against the previous version (and any other entrants available) in two-game matches with the colours swapped, at representative node budgets, with the score and its confidence interval. |
 | 4. Cross-build parity | On identical rule fixtures, compare legal sets, applied moves, next player, counters, and outcomes between the standalone rules and component test adapter using the expected results in this document. Test derived rule internals through a test build or local runner; keep the release WIT stable. With identical seed and node budget, compare strategy choices for representative states using the release binary. Compare recognizable settled board contents under both orientations. |

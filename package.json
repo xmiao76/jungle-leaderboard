@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "astro dev",
     "dev:arena": "vite --config arena/vite.config.ts",
-    "dev:full": "node --import tsx scripts/api-server.ts --port 8788",
+    "dev:full": "node --import tsx scripts/api-server.ts",
     "build": "node scripts/verify-rules-digest.mjs && astro check && vue-tsc --noEmit -p arena/tsconfig.json && tsc -p functions/tsconfig.json && astro build && vite build --config arena/vite.config.ts",
     "preview": "node scripts/serve-static.mjs dist --port 4400",
     "check": "astro check && vue-tsc --noEmit -p arena/tsconfig.json && tsc -p functions/tsconfig.json",

@@ -7,6 +7,7 @@ import {
   formatPoints,
   gamePoints,
   planSeries,
+  seriesRecord,
   sidesForGame,
   summarizeSeries,
   type SeriesGame,
@@ -90,5 +91,37 @@ describe('wording', () => {
     expect(describeSeriesGame(g2!)).toBe('Game 2: Left plays blue, Right moves first — drawn (½–½).');
     expect(describeSeriesGame({ ...g2!, result: systemError })).toContain('system error');
     expect(describeSeriesGame({ ...g2!, result: null })).toContain('not played');
+  });
+});
+
+describe('seriesRecord', () => {
+  const zero = { wins: 0, losses: 0, draws: 0 };
+
+  it('counts wins, losses and draws for each seat', () => {
+    expect(seriesRecord(withResults([won('left'), won('left')]))).toEqual({
+      left: { wins: 2, losses: 0, draws: 0 },
+      right: { wins: 0, losses: 2, draws: 0 },
+    });
+    expect(seriesRecord(withResults([won('left'), won('right')]))).toEqual({
+      left: { wins: 1, losses: 1, draws: 0 },
+      right: { wins: 1, losses: 1, draws: 0 },
+    });
+    expect(seriesRecord(withResults([won('right'), drawn]))).toEqual({
+      left: { wins: 0, losses: 1, draws: 1 },
+      right: { wins: 1, losses: 0, draws: 1 },
+    });
+  });
+
+  it('counts a forfeit as a win for the other seat', () => {
+    expect(seriesRecord(withResults([forfeitTo('right'), drawn]))).toEqual({
+      left: { wins: 0, losses: 1, draws: 1 },
+      right: { wins: 1, losses: 0, draws: 1 },
+    });
+  });
+
+  it('counts nothing for a system error or a game not played', () => {
+    expect(seriesRecord(withResults([systemError]))).toEqual({ left: zero, right: zero });
+    expect(seriesRecord(withResults([won('left'), null]))).toEqual({ left: { wins: 1, losses: 0, draws: 0 }, right: { wins: 0, losses: 1, draws: 0 } });
+    expect(seriesRecord([])).toEqual({ left: zero, right: zero });
   });
 });

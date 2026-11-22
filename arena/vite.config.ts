@@ -62,7 +62,11 @@ export default defineConfig({
       },
     },
   },
-  // The catalog API comes from `npm run dev:full` (wrangler pages dev on :8788).
-  server: { port: 4322, fs: { allow: [here('..')] }, proxy: { '/api': 'http://127.0.0.1:8788' } },
+  // The catalog API comes from `npm run dev:full` (wrangler pages dev on ARENA_API_PORT, default 8788).
+  server: {
+    port: 4322,
+    fs: { allow: [here('..')] },
+    proxy: { '/api': `http://127.0.0.1:${process.env['ARENA_API_PORT'] ?? 8788}` },
+  },
   preview: { port: 4323 },
 });

@@ -51,14 +51,14 @@ Also deliver a **public catalog** from version-controlled static assets. Supply 
 |---|---|
 | Vue/Nuxt static frontend or equivalent | Separate upload, setup and play pages, two Canvas elements, selectors, responsive controls, frame presentation, accessibility labels, and verified package/replay storage. No match depends on SSR. |
 | Match controller | Create one fresh long-lived Worker/instance per seat and one isolated referee worker. Correlate requests, enforce deadlines, handle pause/stop, and commit one decision at a time. Loading and transpilation also run off the UI thread. |
-| Trusted referee (Arena-owned) | Implement the rulebook in this document in the host team's chosen stack. Own the board, legal-move generation, captures, history, quiet counter, and adjudication. Use the embedded cases to test the referee independently of the two entrants. |
+| Trusted referee (Arena-owned) | Implement the rulebook in this document in the host team's chosen stack. Own the board, legal-move generation, captures, history, quiet counter, repeated-position counts, and adjudication. Use the embedded cases to test the referee independently of the two entrants. |
 | Uploaded games | Both render official positions. Only the active seat receives a move request. Their isolated memories, caches, artwork, and render output belong to their respective instances. |
 
 **One turn.** At revision 12, request a move from the active player using the official snapshot and legal list for revision 12. Accept at most one response for that request; check the index and revalidate the move with the referee. Atomically record and apply the move, advance to 13, then send the same revision-13 snapshot to both renderers. Preserve the last good frame during loading or animation. Stage both settled frames for single-step and present them in one animation callback. Never infer a move from canvas pixels, animation timing, or the other game's local board.
 
 **Pause and failure.** Pause takes effect at a documented ply boundary. Hold a valid in-flight proposal without committing until resume or single-step; cancel pending work on restart and discard old replies. Single-step commits exactly one ply, then waits for both settled frames or a bounded render-error response. Apply equal, disclosed budgets to the two seats. Provide separate finite deadlines for loading, rendering, and thinking. A timed-out, trapped, or invalid move from the active player forfeits the game with an explicit reason. A display failure marks the affected pane and offers a resync from the authoritative snapshot. A referee or host failure ends the run as a system error. End or terminate workers on reset and close.
 
-## Jungle v1 rulebook and test data
+## Jungle v2 rulebook and test data
 
 This section defines the match variant for both standalone and Arena play. Start in a new repository. The WIT, board, rule identity and expected results in this document are sufficient to implement and test either side of the interface. Create or license and package the artwork and sounds your deliverable uses.
 
@@ -70,16 +70,17 @@ This section defines the match variant for both standalone and Arena play. Start
 - Only rats can occupy water. A rat may step between water and an empty land square in either direction. An occupied destination across a water/land boundary cannot be captured. A swimming rat can capture another rat in adjacent water.
 - A lion or tiger starting on land and facing adjacent water may jump straight to the first land square beyond the continuous water run, applying normal landing/capture rules. A rat of either color on any intermediate square blocks the jump. **Lion: two or three intervening water squares. Tiger: exactly two.** On this portrait board a short jump is `21 → 24` (horizontal) and a long jump is `15 → 43` (vertical). Apply the same length rule in reverse and on both rivers.
 - On land, animals capture equal or lower ranks. Rank increases from rat (1) to elephant (8) in the profile order. An untrapped rat can take an elephant; an elephant cannot take an untrapped rat. A piece on an **opponent-owned** trap has effective rank zero. Compare the attacker's source and defender's destination before moving. Any attacker can capture a trapped defender; a trapped attacker cannot capture an untrapped defender while leaving its trap. A surviving piece regains its ordinary rank upon exiting. Friendly traps do not reduce rank.
-- After a legal move, remove a captured piece, update board and history, advance the revision, and set the quiet counter to zero on capture or increment it by one otherwise. Check, in order: **enemy den reached**, **opponent has zero pieces**, **opponent has zero legal moves**, **100 consecutive plies without capture**. The first three are wins for the mover; the last is a draw. A ply is one side's move. There is no independent repetition result. Initial board counters are zero. For a live position continue with the opponent. A match ends as soon as a terminal result is committed.
-- Use the wire reason strings `den`, `elimination`, `immobilization`, or `no-capture` for these results and an empty string while playing. A forfeit awards the game to the opposing seat and uses `timeout`, `trap`, or `invalid-move`. A host/referee failure is a system error outside the board result. For every committed legal move set `to-play` to the opponent, including in the terminal snapshot. A forfeit retains the last board, turn, counters and history and increments the revision once.
+- After a legal move, remove a captured piece, update board and history, advance the revision, and set the quiet counter to zero on capture or increment it by one otherwise. Check, in order: **enemy den reached**, **opponent has zero pieces**, **opponent has zero legal moves**, **a position repeated for the third time**, **100 consecutive plies without capture**. The first three are wins for the mover; the last two are draws. A ply is one side's move. Initial board counters are zero. For a live position continue with the opponent. A match ends as soon as a terminal result is committed.
+- **Repetition draw.** If the two sides fall into a loop that keeps recreating the same situation, the referee declares the game drawn. A position is the contents of all 63 squares together with the side to move. Count every position of the game: the starting position (revision 0, or the given board of a synthetic test position) and the position after each committed move. Repeats need not be consecutive. As soon as a committed move produces a position for the third time, the game is drawn with reason `repetition`. A capture never repeats a position, because it leaves fewer pieces on the board. Every snapshot carries `first-side` and the complete `history`, so an entrant can replay the game from the opening and count positions itself: an engine that is ahead should avoid a third repetition, and one that is behind may seek it.
+- Use the wire reason strings `den`, `elimination`, `immobilization`, `repetition`, or `no-capture` for these results and an empty string while playing. A forfeit awards the game to the opposing seat and uses `timeout`, `trap`, or `invalid-move`. A host/referee failure is a system error outside the board result. For every committed legal move set `to-play` to the opponent, including in the terminal snapshot. A forfeit retains the last board, turn, counters and history and increments the revision once.
 
 ### Canonical rules profile
 
-Use `desktop-jungle-v1` as the literal wire ID and `a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63` as `rules-digest`. Both are ready to use. To reproduce the digest, hash the following JSON block only, including one final LF, as UTF-8 with LF line endings and no BOM. Preserve its whitespace. SHA-256 of the entrant's binary is a separate value.
+Use `desktop-jungle-v2` as the literal wire ID and `a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57` as `rules-digest`. Both are ready to use. This profile replaces `desktop-jungle-v1`, which had no repetition draw; the two are not interchangeable. To reproduce the digest, hash the following JSON block only, including one final LF, as UTF-8 with LF line endings and no BOM. Preserve its whitespace. SHA-256 of the entrant's binary is a separate value.
 
 ```json
 {
-  "id": "desktop-jungle-v1",
+  "id": "desktop-jungle-v2",
   "size": [7, 9],
   "index": "row*7+col; origin top-left",
   "defaultFirst": "red",
@@ -95,8 +96,9 @@ Use `desktop-jungle-v1` as the literal wire ID and `a0936f1eee833dd11107ed581dc7
   "trapCapture": "pre-move ranks; enemy trap sets rank to zero; trapped defender capturable by any rank; trapped attacker cannot capture an untrapped defender",
   "normalCapture": "rat beats elephant; elephant cannot take rat; otherwise attacker rank >= defender rank",
   "noCapturePlies": 100,
-  "repetition": "no separate adjudication",
-  "terminalOrder": ["den", "elimination", "immobilization", "no-capture"]
+  "repetition": "draw when a committed move produces a position (all 63 squares and the side to move) for the third time in the game",
+  "repetitionOccurrences": 3,
+  "terminalOrder": ["den", "elimination", "immobilization", "repetition", "no-capture"]
 }
 ```
 
@@ -132,7 +134,7 @@ Each row below is `[name, board, candidateMove, expectedLegal]`. The board objec
 ]
 ```
 
-For adjudication tests, apply the indicated legal Red move to the sparse position, starting with the given quiet counter. Verify the board, the counter and the result. A normal commit adds exactly one history item and advances the revision once. In the table, cells such as `R.cat@2` denote a red cat on square 2.
+For adjudication tests, apply the indicated legal Red move to the sparse position, starting with the given quiet counter. Verify the board, the counter and the result. A normal commit adds exactly one history item and advances the revision once. In the table, cells such as `R.cat@2` denote a red cat on square 2. The repetition rows list several plies: apply them in order from the given position, Red first, alternating sides.
 
 | Position | Move | Quiet count before → after | Expected status / winner / reason |
 |---|---|---|---|
@@ -142,6 +144,9 @@ For adjudication tests, apply the indicated legal Red move to the sparse positio
 | R.cat@42, B.dog@6 | 42 → 43 | 98 → 99 | playing / none / empty string |
 | R.cat@42, B.dog@6 | 42 → 43 | 99 → 100 | drawn / none / no-capture |
 | R.wolf@42, B.cat@43, B.dog@6 | 42 → 43 | 99 → 0 | playing / none / empty string |
+| R.cat@42, B.dog@6 | 42 → 43, 6 → 5, 43 → 42, 5 → 6, 42 → 43, 6 → 5, 43 → 42 | 0 → 7 | playing / none / empty string (no position has occurred three times) |
+| R.cat@42, B.dog@6 | the seven plies above, then 5 → 6 | 0 → 8 | drawn / none / repetition (the starting position, Red to move, occurs for the third time; revision 8, `to-play` Red) |
+| R.cat@42, B.dog@6 | the same eight plies | 92 → 100 | drawn / none / repetition (checked before the no-capture limit) |
 
 **Opening handshake.** Each side has 24 legal moves from the untouched opening when selected to start. With Red first and the contractual sort order, index 0 is `42 → 35`; index 23 is `62 → 61`. With Blue first, index 0 is `0 → 1`. For the default Red opening, send index 0 once. At revision 1, square 42 is empty, 35 contains the red elephant, the quiet counter is 1, history is `[[42,35]]` in pair notation, and Blue is next. Both panes receive that same revision. Replaying it with either pane flipped preserves the wire values.
 

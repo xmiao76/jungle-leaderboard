@@ -23,7 +23,10 @@ test('a match is two games, colours swapped so each side moves first once, then 
   await expect(page.getByTestId('title-right')).toHaveValue(SAMPLE);
   await setFastPlay(page);
   await page.getByTestId('left-red').check();
+  // Matches default to full strength: both programs are initialised at hard.
+  await expect(page.getByLabel(/Difficulty/)).toHaveValue('hard');
   await startMatch(page);
+  expect(new URL(page.url()).searchParams.get('level')).toBe('hard');
 
   // Game 1: Left plays Red, as set up.
   await expect(page.getByTestId('series-game')).toHaveText('Game 1 of 2', { timeout: 60_000 });
@@ -44,6 +47,42 @@ test('a match is two games, colours swapped so each side moves first once, then 
   const games = (await page.getByTestId('match-games').textContent()) ?? '';
   expect(games).toContain('Game 1: Left plays red, Left moves first');
   expect(games).toContain('Game 2: Left plays blue, Right moves first');
+
+  // The result dialog: both programs by name and version, each one's wins, losses and draws.
+  await page.getByTestId('match-result').click();
+  const dialog = page.getByTestId('match-result-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId('match-card-left')).toContainText(TEST_ENTRANT);
+  await expect(page.getByTestId('match-card-right')).toContainText(SAMPLE);
+  const tally = async (seat: 'left' | 'right') => {
+    const card = page.getByTestId(`match-card-${seat}`);
+    const n = async (key: string) => Number(await card.getAttribute(`data-${key}`));
+    return { wins: await n('wins'), losses: await n('losses'), draws: await n('draws'), outcome: await card.getAttribute('data-outcome') };
+  };
+  const [left, right] = [await tally('left'), await tally('right')];
+  expect(left.wins + left.losses + left.draws).toBe(2);
+  expect([left.wins, left.losses, left.draws]).toEqual([right.losses, right.wins, right.draws]);
+  const expectedOutcome = left.wins > right.wins ? ['won', 'lost'] : left.wins < right.wins ? ['lost', 'won'] : ['drawn', 'drawn'];
+  expect([left.outcome, right.outcome]).toEqual(expectedOutcome);
+  await expect(page.getByTestId('match-tally')).toContainText(`won ${left.wins} game`);
+  await expect(page.getByTestId('match-game-1')).toContainText(/won ·|Drawn ·/);
+  await expect(page.getByTestId('match-game-2')).toContainText(/won ·|Drawn ·/);
+  // It overlays the boards without making the page scroll, in both themes and in portrait.
+  const scrolls = () => page.evaluate(() => document.documentElement.scrollHeight > innerHeight || document.documentElement.scrollWidth > innerWidth);
+  expect(await scrolls()).toBe(false);
+  await page.screenshot({ path: test.info().outputPath('match-result-light.png'), animations: 'disabled' });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.screenshot({ path: test.info().outputPath('match-result-dark.png'), animations: 'disabled' });
+  await page.emulateMedia({ colorScheme: 'light' });
+  const viewport = page.viewportSize()!;
+  await page.setViewportSize({ width: 768, height: 1024 });
+  expect(await scrolls()).toBe(false);
+  await page.screenshot({ path: test.info().outputPath('match-result-portrait.png'), animations: 'disabled' });
+  await page.setViewportSize(viewport);
+  // Escape closes it; the page behind is usable again.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+
   const rev = Number(await page.getByTestId('rev').textContent());
   await expect(page.getByTestId('canvas-left')).toHaveAttribute('data-rev', String(rev));
   await expect(page.getByTestId('canvas-right')).toHaveAttribute('data-rev', String(rev));

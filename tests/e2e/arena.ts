@@ -49,11 +49,22 @@ export async function startMatch(page: Page): Promise<void> {
   await expect(page.locator('[data-page="play"][data-booted="true"]')).toBeVisible({ timeout: 30_000 });
 }
 
-/** Wait until both games of the match are over and the overall result is shown. */
+/**
+ * Wait until both games of the match are over: the result dialog opens by itself with a headline,
+ * and the bar keeps a one-line summary. Closes the dialog so the page can be used again.
+ */
 export async function waitForMatchResult(page: Page, timeout = 170_000): Promise<string> {
   await expect(page.getByTestId('match-result')).toBeVisible({ timeout });
   await expect(page.getByTestId('phase')).toHaveText('Finished');
+  await expect(page.getByTestId('match-result-dialog')).toBeVisible();
+  await expect(page.getByTestId('match-headline')).toHaveText(/wins the match|The match is drawn|No match result/);
+  await closeMatchResult(page);
   return (await page.getByTestId('match-result').textContent()) ?? '';
+}
+
+export async function closeMatchResult(page: Page): Promise<void> {
+  await page.getByTestId('match-result-close').click();
+  await expect(page.getByTestId('match-result-dialog')).toBeHidden();
 }
 
 /** Start a match and play it out: both games, then the match result. */

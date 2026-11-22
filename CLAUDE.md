@@ -66,7 +66,10 @@ runs both). Spec: `arena_prompt.md`. Protocol and replay format: `sdk/README.md`
   `/arena/play/` (`arena/play/index.html` → `PlayApp.vue`; config or `?replay=` in the URL, parsed by
   `parsePlayQuery`). The play page must never scroll: board size is pure CSS in `arena.css`
   (`.play-root` custom properties); anything new on it goes in the one-row bar or in an overlay
-  (history drawer, toasts), never in the layout flow. Each Arena page declares
+  (history drawer, toasts), never in the layout flow. The two-game match result is a native modal
+  `<dialog>` (`MatchResultDialog.vue`; record logic in `match/series.ts` `seriesRecord`, text in
+  `ui/labels.ts`) that opens by itself and makes the page behind it inert; the e2e helper
+  `waitForMatchResult` closes it, so any new test acting after a match must too. Each Arena page declares
   its root in `<meta name="arena-root">`; build every link, the catalog URL and SDK URLs through
   `arena/src/app/paths.ts`, never from `document.baseURI`, or the nested page resolves them wrongly.
   Seat choices persist in localStorage and can be preset with `?left=<sha>&right=<sha>`.

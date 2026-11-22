@@ -6,7 +6,7 @@ import { SIDE_CHIP } from '../ui/classes';
 import { describeResult, moveNumber, PHASE_LABEL, seatLabel, sideLabel } from '../ui/labels';
 
 defineProps<{ historyOpen: boolean; fullscreen: boolean }>();
-const emit = defineEmits<{ toggleHistory: []; toggleFullscreen: [] }>();
+const emit = defineEmits<{ toggleHistory: []; toggleFullscreen: []; showResult: [] }>();
 
 const match = computed(() => state.match);
 const snapshot = computed(() => match.value?.snapshot ?? null);
@@ -60,13 +60,14 @@ const STAT = 'shrink-0 whitespace-nowrap';
       <span v-if="match?.heldProposal" :class="[STAT, 'rounded-full border border-gold-line bg-gold-soft px-2 py-px']" data-testid="held">
         held {{ match.heldProposal.src }}→{{ match.heldProposal.dst }}
       </span>
-      <span
+      <button
         v-if="series?.text"
-        class="min-w-0 truncate rounded-md border border-gold-line bg-gold-soft px-2 py-1 font-semibold"
-        :title="[series.text, ...series.details].join(' · ')"
-        role="status"
+        type="button"
+        class="min-w-0 truncate rounded-md border border-gold-line bg-gold-soft px-2 py-1 text-left font-semibold transition hover:border-accent"
+        :title="`${[series.text, ...series.details].join(' · ')} — click for the full result`"
         data-testid="match-result"
-        >{{ series.text }}</span
+        @click="emit('showResult')"
+        >{{ series.text }}</button
       >
       <span v-if="series?.summary" class="sr-only" data-testid="match-games">{{ series.details.join(' ') }}</span>
       <span

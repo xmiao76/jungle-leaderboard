@@ -116,3 +116,25 @@ html.play-page body {
     transition: none;
   }
 }
+
+/* The two-game match result (MatchResultDialog.vue): a modal in the top layer, over the boards. */
+.match-result-dialog::backdrop {
+  background: oklch(0.2 0.015 65 / 0.5);
+}
+
+.match-result-dialog[open] {
+  animation: match-result-in 0.22s ease-out;
+}
+
+@keyframes match-result-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match-result-dialog[open] {
+    animation: none;
+  }
+}

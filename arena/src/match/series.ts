@@ -75,6 +75,32 @@ export function summarizeSeries(games: readonly SeriesGame[]): SeriesSummary {
   return { score, complete, winner };
 }
 
+/** One seat's games in the match: a forfeit counts as a win for the other seat. */
+export interface SeatRecord {
+  readonly wins: number;
+  readonly losses: number;
+  readonly draws: number;
+}
+
+/** Wins, losses and draws per seat; a game with no board result counts for neither. */
+export function seriesRecord(games: readonly SeriesGame[]): Readonly<Record<Seat, SeatRecord>> {
+  const empty: SeatRecord = { wins: 0, losses: 0, draws: 0 };
+  return games.reduce<Record<Seat, SeatRecord>>(
+    (record, game) => {
+      const points = gamePoints(game.result);
+      if (!points) return record;
+      const tally = (seat: Seat): SeatRecord => {
+        const r = record[seat];
+        if (points[seat] === 1) return { ...r, wins: r.wins + 1 };
+        if (points[seat] === 0) return { ...r, losses: r.losses + 1 };
+        return { ...r, draws: r.draws + 1 };
+      };
+      return { left: tally('left'), right: tally('right') };
+    },
+    { left: empty, right: empty },
+  );
+}
+
 /** 1.5 → "1½", 0.5 → "½", 2 → "2". */
 export function formatPoints(points: number): string {
   const whole = Math.floor(points);
