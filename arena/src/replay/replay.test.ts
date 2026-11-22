@@ -94,6 +94,21 @@ describe('replay format', () => {
     const badSeat = { ...baseReplay(), seats: { ...baseReplay().seats, left: { ...baseReplay().seats.left, sha256: 'zz' } } };
     expect(validateReplay(badSeat)).toMatchObject({ ok: false });
   });
+
+  it('accepts the optional two-game match record, and rejects a malformed one', () => {
+    const { replay } = played(4);
+    for (const game of [1, 2]) {
+      const tagged = { ...replay, series: { id: 'match-1', game, of: 2 } };
+      expect(validateReplay(JSON.parse(JSON.stringify(tagged)))).toMatchObject({ ok: true });
+    }
+    // Replays from before two-game matches carry no series at all.
+    expect(validateReplay(JSON.parse(JSON.stringify(replay)))).toMatchObject({ ok: true });
+    for (const series of [{ id: 'm', game: 3, of: 2 }, { id: 'm', game: 0, of: 2 }, { game: 1, of: 2 }, 'game 1']) {
+      const check = validateReplay(JSON.parse(JSON.stringify({ ...replay, series })));
+      expect(check.ok).toBe(false);
+      if (!check.ok) expect(check.issues.join()).toMatch(/series/);
+    }
+  });
 });
 
 describe('storage', () => {

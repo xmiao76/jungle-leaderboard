@@ -91,6 +91,7 @@ waits for both settled frames (or a bounded render error).
   "format": "jungle-arena-replay", "version": 1, "id": "…", "createdAt": "ISO-8601",
   "arena": { "version": "1.0.0", "loaderVersion": "jco-transpile@0.24.0+loader-1" },
   "rules": { "id": "desktop-jungle-v1", "digest": "a0936f1e…" },
+  "series": { "id": "…", "game": 1, "of": 2 },   // optional: which game of a two-game match
   "seats": { "left": { "sha256": "…", "size": 0, "metadata": {}, "side": "red" }, "right": { … } },
   "settings": { "firstSide": "red", "seed": 0, "difficulty": "medium", "nodeBudget": 20000,
                 "deadlines": { "load": 20000, "think": 5000, "render": 2000 } },
@@ -104,3 +105,8 @@ waits for both settled frames (or a bounded render error).
 
 Opening a replay re-applies every ply through the referee; a file whose record does not reproduce
 itself, or that was recorded under other rules, is refused.
+
+A match is two games (colours swapped for game 2), and each game is its own replay. The two share a
+`series.id`, and `series.game` says which game this one is. The field is optional: replays recorded
+before two-game matches, and hand-made ones, omit it. If it is present it must be well formed
+(`1 <= game <= of`).

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { chooseVersion, fixture, importWasm, openArena, playInSeat, SAMPLE, setFastPlay, setUpTestVsSample, startMatch } from './arena';
+import { chooseVersion, fixture, importWasm, openArena, playInSeat, SAMPLE, setFastPlay, setUpTestVsSample, startMatch, waitForMatchResult } from './arena';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -15,17 +15,22 @@ async function lateMatch(page: Page, file: string, thinkDeadline?: string) {
   await startMatch(page);
 }
 
-test('an out-of-range index forfeits as invalid-move', async ({ page }) => {
+test('an out-of-range index forfeits as invalid-move, in both games of the match', async ({ page }) => {
   await lateMatch(page, 'late-index.wasm');
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 60_000 });
-  await expect(page.getByTestId('result')).toContainText('Blue wins');
+  // The misbehaving left seat forfeits game 1 (as Red) and game 2 (as Blue): a forfeit is a
+  // result, so the match is complete and goes to the right seat.
+  const match = await waitForMatchResult(page, 120_000);
+  expect(match).toContain('Match: Left 0 – 2 Right');
+  expect(match).toContain('Right (');
+  await expect(page.getByTestId('result')).toContainText('Red wins');
   await expect(page.getByTestId('result')).toContainText('invalid move');
-  await expect(page.locator('[data-notice="warning"]')).toContainText('invalid move');
+  await expect(page.locator('[data-notice="warning"]').first()).toContainText('invalid move');
 });
 
 test('a trapping entrant forfeits as trap', async ({ page }) => {
   await lateMatch(page, 'late-trap.wasm');
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 60_000 });
+  const match = await waitForMatchResult(page, 120_000);
+  expect(match).toContain('Left 0 – 2 Right');
   await expect(page.getByTestId('result')).toContainText('the opponent crashed');
 });
 
@@ -37,7 +42,8 @@ test('a non-responsive entrant forfeits at the think deadline while the page sta
   await page.getByTestId('mute').click();
   await expect(page.getByTestId('mute')).toHaveText('Unmute');
   expect(Date.now() - started).toBeLessThan(1_000);
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 30_000 });
+  // It times out in both games of the match.
+  await waitForMatchResult(page, 120_000);
   await expect(page.getByTestId('result')).toContainText('ran out of time');
   // A fresh instance drew the terminal position for the forfeiting seat.
   const rev = await page.getByTestId('rev').textContent();
@@ -49,7 +55,7 @@ test('a bad frame marks only that pane and the game still finishes', async ({ pa
   await expect(page.getByTestId('pane-error-left')).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId('pane-error-left')).toContainText('Display failure');
   await expect(page.getByTestId('pane-error-right')).toHaveCount(0);
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 120_000 });
+  await waitForMatchResult(page, 240_000);
   await expect(page.getByTestId('result')).toContainText(/wins|Draw/);
 });
 
@@ -73,7 +79,7 @@ test('a replay whose binaries are missing opens on the labeled reference board',
   await setUpTestVsSample(page);
   await setFastPlay(page);
   await startMatch(page);
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 120_000 });
+  await waitForMatchResult(page, 240_000);
 
   await openArena(page); // the replay list lives on the setup page
   const download = page.waitForEvent('download');
@@ -103,5 +109,5 @@ test('works, and says so, when IndexedDB is unavailable', async ({ page }) => {
   await chooseVersion(page, 'left', SAMPLE, 'v1.0.0');
   await chooseVersion(page, 'right', SAMPLE, 'v1.0.0');
   await startMatch(page);
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 120_000 });
+  await waitForMatchResult(page, 240_000);
 });

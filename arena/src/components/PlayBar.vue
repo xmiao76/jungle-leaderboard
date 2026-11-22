@@ -27,6 +27,15 @@ const sideNames = computed(() => {
   return names;
 });
 const resultText = computed(() => describeResult(match.value?.result ?? null, sideNames.value));
+// Every match is two games (match/series.ts): which one this is, and the overall result.
+const series = computed(() => state.series);
+const seriesLabel = computed(() => {
+  const s = series.value;
+  if (!s) return '';
+  if (s.summary) return 'Match over';
+  if (s.nextGameAt) return 'Game 1 of 2 over · game 2 next, colours swapped';
+  return `Game ${s.game} of 2`;
+});
 const speeds = Object.keys(SPEEDS) as Speed[];
 
 const BUTTON =
@@ -41,6 +50,9 @@ const STAT = 'shrink-0 whitespace-nowrap';
     <a :href="arenaUrl()" class="shrink-0 font-semibold text-accent hover:underline" data-testid="back-setup">← Setup</a>
 
     <div class="flex min-w-0 flex-1 items-center gap-3 overflow-hidden" aria-live="polite">
+      <span v-if="seriesLabel" :class="[STAT, 'rounded-full border border-accent-line px-2 py-px font-semibold text-accent']" data-testid="series-game" :data-game="series?.game">{{
+        seriesLabel
+      }}</span>
       <span :class="[STAT, 'font-semibold']" data-testid="phase">{{ phase ? PHASE_LABEL[phase] : 'Starting' }}</span>
       <span :class="STAT">Move <span class="tabular font-semibold" data-testid="move-number">{{ moveNumber(snapshot) }}</span></span>
       <span :class="[STAT, 'text-subtle']">rev <span class="tabular" data-testid="rev">{{ snapshot?.rev ?? '—' }}</span></span>
@@ -49,12 +61,24 @@ const STAT = 'shrink-0 whitespace-nowrap';
         held {{ match.heldProposal.src }}→{{ match.heldProposal.dst }}
       </span>
       <span
-        v-if="resultText"
+        v-if="series?.text"
         class="min-w-0 truncate rounded-md border border-gold-line bg-gold-soft px-2 py-1 font-semibold"
-        :title="resultText"
+        :title="[series.text, ...series.details].join(' · ')"
         role="status"
+        data-testid="match-result"
+        >{{ series.text }}</span
+      >
+      <span v-if="series?.summary" class="sr-only" data-testid="match-games">{{ series.details.join(' ') }}</span>
+      <span
+        v-if="resultText"
+        :class="[
+          'min-w-0 truncate rounded-md border px-2 py-1 font-semibold',
+          series?.text ? 'border-line-strong text-muted' : 'border-gold-line bg-gold-soft',
+        ]"
+        :title="resultText"
+        :role="series?.text ? undefined : 'status'"
         data-testid="result"
-        >{{ resultText }}</span
+        >{{ series && !series.summary ? `Game ${series.game}: ` : '' }}{{ resultText }}</span
       >
       <span v-else-if="snapshot && snapshot.status === 'playing' && turnSeat" :class="[SIDE_CHIP[snapshot.toPlay], 'shrink-0']" data-testid="turn">
         {{ sideLabel(snapshot.toPlay) }} · {{ seatLabel(turnSeat) }}
@@ -73,8 +97,8 @@ const STAT = 'shrink-0 whitespace-nowrap';
       <select v-model="state.settings.speed" :class="[BUTTON, 'pr-1']" aria-label="Animation speed">
         <option v-for="s in speeds" :key="s" :value="s">{{ s }}</option>
       </select>
-      <button type="button" :class="BUTTON" :disabled="busy" data-testid="restart" @click="startMatch()">Restart</button>
-      <button type="button" :class="BUTTON" :disabled="busy" data-testid="swap" title="Swap sides and rematch with the same settings" @click="swapAndRematch()">
+      <button type="button" :class="BUTTON" :disabled="busy" data-testid="restart" title="Play the two-game match again from game 1" @click="startMatch()">Restart</button>
+      <button type="button" :class="BUTTON" :disabled="busy" data-testid="swap" title="A new two-game match with game 1's colours swapped" @click="swapAndRematch()">
         Swap
       </button>
       <button type="button" :class="BUTTON" :aria-pressed="state.muted" data-testid="mute" aria-keyshortcuts="M" @click="setMuted(!state.muted)">

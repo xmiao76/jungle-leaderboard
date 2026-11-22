@@ -103,14 +103,23 @@ The Arena was built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in
    SHA-256) for each seat. A link of the form `/arena/?left=<sha256>&right=<sha256>` preselects both.
 2. Choose which column plays Red, who moves first, difficulty, seed, the shared node budget, the think
    deadline and the animation speed, then **Start match**. A vs B, A vs an older A, and the same binary
-   in both seats all work.
+   in both seats all work. **A match is always two games:**
+   - Game 2 starts by itself after game 1, with the colours swapped and the same side moving first.
+     So each version moves first once and plays each colour once.
+   - After game 2 the bar shows the overall result, e.g. `Match: Left 1½ – ½ Right · Left (…) wins the
+     match`. A win scores 1, and a forfeit counts as a win for the other seat. A draw scores ½ each.
+   - A system error leaves the match incomplete.
 3. The match opens on its own full-screen page: the two boards split the window left and right
    (stacked on portrait screens), each with a one-line label of seat, side, program, version and model.
-   One bar holds turn, move, state, last move and result, plus play/pause, step, speed, restart,
-   **Swap** (rematch with colours exchanged), mute, **History** (an overlay drawer with the full move
-   list) and **Full screen**. Keys: Space play/pause, S step, H history, M mute. The page URL holds
+   One bar holds the game (1 or 2 of 2), turn, move, state, last move, the game's result and then the
+   match result. It also has these controls:
+   - play/pause, step and speed;
+   - **Restart**, which replays the two-game match from game 1;
+   - **Swap**, which starts a new two-game match with game 1's colours exchanged;
+   - mute, **History** (an overlay drawer with the full move list) and **Full screen**. Keys: Space play/pause, S step, H history, M mute. The page URL holds
    every setting, so it can be shared, and reloading restarts the same match (same seed).
-4. Every committed ply is saved before the game moves on. Replays survive a reload, can be downloaded,
+4. Every committed ply is saved before the game moves on. Each game of a match is its own replay,
+   labelled "Game 1 of 2" or "Game 2 of 2". Replays survive a reload, can be downloaded,
    and reopen on another device with the original programs (or a labeled reference board). **Open**
    plays a replay back on the same full-screen page, with a seek bar.
 

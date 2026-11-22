@@ -10,40 +10,60 @@ import {
   startMatch,
   TEST_ENTRANT,
   uploadTestEntrant,
+  waitForMatchResult,
 } from './arena';
 
 test.describe.configure({ mode: 'serial' });
 
-test('an uploaded program plays the public game in both colour assignments to a terminal', async ({ page }) => {
+test('a match is two games, colours swapped so each side moves first once, then the overall result', async ({ page }) => {
+  test.setTimeout(400_000); // two full matches (four games)
   // Upload page → Arena setup page with the upload in the left seat; the right seat from the catalog.
   await setUpTestVsSample(page);
   await expect(page.getByTestId('title-left')).toHaveValue(TEST_ENTRANT);
   await expect(page.getByTestId('title-right')).toHaveValue(SAMPLE);
   await setFastPlay(page);
-
   await page.getByTestId('left-red').check();
-  const first = await startAndFinish(page);
-  expect(first.result).toMatch(/wins|Draw/);
-  await expect(page.getByTestId('side-left')).toHaveText(/Red/);
+  await startMatch(page);
 
+  // Game 1: Left plays Red, as set up.
+  await expect(page.getByTestId('series-game')).toHaveText('Game 1 of 2', { timeout: 60_000 });
+  await expect(page.getByTestId('side-left')).toHaveText(/Red/);
   // Each pane shows its own program's board.
+  await expect(page.getByTestId('canvas-left')).toHaveAttribute('data-rev', /\d+/);
   expect(await canvasFingerprint(page, 'canvas-left')).not.toBe(await canvasFingerprint(page, 'canvas-right'));
 
-  // Swap & rematch: same entrants and settings, colours exchanged.
-  await page.getByTestId('swap').click();
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 150_000 });
+  // Game 2 starts by itself, colours swapped.
+  await expect(page.getByTestId('series-game')).toHaveText('Game 2 of 2', { timeout: 150_000 });
   await expect(page.getByTestId('side-left')).toHaveText(/Blue/);
+
+  // After game 2: the overall match result, and what each game was.
+  const match = await waitForMatchResult(page);
+  expect(match).toMatch(/^Match: Left (2|1½|1|½|0) – (2|1½|1|½|0) Right · /);
+  expect(match).toMatch(/wins the match|the match is drawn/);
+  await expect(page.getByTestId('series-game')).toHaveText('Match over');
+  const games = (await page.getByTestId('match-games').textContent()) ?? '';
+  expect(games).toContain('Game 1: Left plays red, Left moves first');
+  expect(games).toContain('Game 2: Left plays blue, Right moves first');
   const rev = Number(await page.getByTestId('rev').textContent());
   await expect(page.getByTestId('canvas-left')).toHaveAttribute('data-rev', String(rev));
   await expect(page.getByTestId('canvas-right')).toHaveAttribute('data-rev', String(rev));
+
+  // Swap & rematch: a new two-game match with game 1's colours exchanged.
+  await page.getByTestId('swap').click();
+  await expect(page.getByTestId('series-game')).toHaveText('Game 1 of 2', { timeout: 60_000 });
+  await expect(page.getByTestId('side-left')).toHaveText(/Blue/);
+  await waitForMatchResult(page);
+  await expect(page.getByTestId('side-left')).toHaveText(/Red/);
+  expect(await page.getByTestId('match-games').textContent()).toContain('Game 1: Left plays blue, Right moves first');
 });
 
 test('runs the same binary in both seats', async ({ page }) => {
   await uploadTestEntrant(page, 'left');
   await chooseVersion(page, 'right', TEST_ENTRANT, 'v1.1.0');
   await setFastPlay(page);
-  const { result } = await startAndFinish(page);
+  const { result, match } = await startAndFinish(page);
   expect(result).toMatch(/wins|Draw/);
+  expect(match).toMatch(/wins the match|the match is drawn/);
   await expect(page.getByTestId('pane-title-left')).toHaveText((await page.getByTestId('pane-title-right').textContent()) ?? '');
 });
 
@@ -97,6 +117,9 @@ test('reopens a saved replay after a reload with the original renderers', async 
   await openArena(page);
   const items = page.getByTestId('replay-list').locator('li[data-replay-id]');
   await expect(items.first()).toBeVisible();
+  // Each game of the match is its own replay; the newest is game 2.
+  await expect(items.first().getByTestId('replay-game')).toHaveText(/Game 2 of 2/);
+  await expect(items.nth(1).getByTestId('replay-game')).toHaveText(/Game 1 of 2/);
   await items.first().getByTestId('replay-open').click();
   const viewer = page.getByTestId('replay-viewer');
   await expect(viewer).toBeVisible();

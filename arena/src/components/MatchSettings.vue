@@ -32,7 +32,7 @@ function setSeed(event: Event) {
             ><input v-model="state.settings.leftSide" type="radio" value="blue" :disabled="loading" data-testid="left-blue" /> Left plays Blue</label
           >
         </div>
-        <p class="text-xs text-subtle">Right plays {{ sideLabel(opponent(state.settings.leftSide)) }}.</p>
+        <p class="text-xs text-subtle">Right plays {{ sideLabel(opponent(state.settings.leftSide)) }} in game 1; the colours swap for game 2.</p>
       </fieldset>
 
       <fieldset class="grid gap-1.5">
@@ -87,10 +87,15 @@ function setSeed(event: Event) {
       move, {{ DEADLINES.render / 1000 }} s per frame, and the same node budget. Running out of time, crashing, or proposing an index outside
       the legal list forfeits the game.
     </p>
+    <p class="mt-2 text-xs leading-relaxed text-subtle" data-testid="match-format">
+      A match is two games. Game 2 starts by itself with the colours swapped and the same side moving first, so each version moves
+      first once. A win scores 1 (a forfeit counts as a win for the other seat), a draw ½ each; the overall result is shown after
+      game 2.
+    </p>
 
     <div class="mt-5 flex flex-wrap items-center gap-3">
       <button type="button" :class="BTN.primary" :disabled="!canStart" data-testid="start" @click="goToPlay()">
-        Start match — full screen
+        Start match (2 games) — full screen
       </button>
       <label class="inline-flex items-center gap-2 text-sm text-muted">
         <input v-model="state.settings.beginPaused" type="checkbox" data-testid="begin-paused" /> Begin paused (step through)

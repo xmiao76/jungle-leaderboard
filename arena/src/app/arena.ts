@@ -9,7 +9,17 @@ import type { Frame } from '../loader/frame';
 import { sha256Hex } from '../loader/hash';
 import { importBinary, type ImportOutcome, type ImportStage } from '../loader/import-service';
 import { DEADLINES, DEFAULT_NODE_BUDGET, LOADER_VERSION, MAX_UPLOAD_BYTES } from '../loader/limits';
-import { MatchController, type AnimationPlan, type MatchEntrant, type MatchView } from '../match/controller';
+import { MatchController, type AnimationPlan, type MatchEntrant, type MatchResult, type MatchView } from '../match/controller';
+import {
+  describeSeries,
+  describeSeriesGame,
+  GAMES_PER_MATCH,
+  planSeries,
+  summarizeSeries,
+  type GameNumber,
+  type SeriesGame,
+  type SeriesSummary,
+} from '../match/series';
 import { SEATS, type Seat } from '../protocol/messages';
 import { initialSnapshot, RULES_DIGEST, RULES_ID } from '../referee';
 import { opponent, type Level, type Side } from '../referee/types';
@@ -35,6 +45,20 @@ export interface Notice {
   readonly body: string;
 }
 
+/** The two-game match in progress or just finished (match/series.ts). */
+export interface SeriesView {
+  readonly id: string;
+  /** The game being played or last played. */
+  game: GameNumber;
+  games: SeriesGame[];
+  /** Set once the match is over: after game 2, or after a system error. */
+  summary: SeriesSummary | null;
+  text: string | null;
+  details: string[];
+  /** While game 1's result is shown: when game 2 starts (epoch ms). */
+  nextGameAt: number | null;
+}
+
 export interface ArenaState {
   booted: boolean;
   storageNotice: string | null;
@@ -53,6 +77,7 @@ export interface ArenaState {
   };
   preparing: Record<Seat, string | null>;
   match: MatchView | null;
+  series: SeriesView | null;
   matchEntrants: Record<Seat, CatalogEntry> | null;
   matchSides: Record<Seat, Side> | null;
   replayId: string | null;
@@ -85,6 +110,7 @@ export const state: ArenaState = reactive({
   },
   preparing: { left: null, right: null },
   match: null,
+  series: null,
   matchEntrants: null,
   matchSides: null,
   replayId: null,
@@ -310,6 +336,19 @@ function describeMove(rev: number, seat: Seat, side: Side, src: number, dst: num
   return `Move ${rev}: ${side} (${seat} seat) ${src} to ${dst}${captured ? ', capture' : ''}.`;
 }
 
+// ---- Matches: always two games (match/series.ts) ---------------------------------------------
+
+/** How long game 1's result stays up before game 2 starts, per animation speed. */
+const BETWEEN_GAMES_MS: Readonly<Record<Speed, number>> = { slow: 4_000, normal: 2_500, fast: 1_200 };
+let nextGameTimer: ReturnType<typeof setTimeout> | null = null;
+
+const entrantName = (entry: CatalogEntry) => `${entry.metadata.title} v${entry.metadata.gameVersion}`;
+
+/**
+ * Start a match: two games between the selected versions. Game 1 uses the colours as set up;
+ * game 2 starts by itself with the colours swapped and the same first side, so each version
+ * moves first once. The overall match result is shown after game 2.
+ */
 export async function startMatch(): Promise<void> {
   audio.unlock();
   // Raw objects: these end up in worker messages and IndexedDB, which cannot take proxies.
@@ -322,7 +361,36 @@ export async function startMatch(): Promise<void> {
     return;
   }
   stopMatch();
-  const sides: Record<Seat, Side> = { left: state.settings.leftSide, right: opponent(state.settings.leftSide) };
+  // One copy of the settings for both games: changing the speed during game 1 must not change
+  // what game 2 is.
+  const settings = { ...state.settings };
+  const id = newId();
+  state.series = {
+    id,
+    game: 1,
+    games: planSeries(settings.leftSide, settings.firstSide),
+    summary: null,
+    text: null,
+    details: [],
+    nextGameAt: null,
+  };
+  await startGame(id, 1, { left, right }, settings);
+}
+
+/** One game of the match identified by `seriesId`; a newer match makes it a no-op. */
+async function startGame(
+  seriesId: string,
+  game: GameNumber,
+  picked: Readonly<Record<Seat, CatalogEntry>>,
+  settings: ArenaState['settings'],
+): Promise<void> {
+  const series = state.series;
+  if (!series || series.id !== seriesId) return;
+  disposeController();
+  series.game = game;
+  series.nextGameAt = null;
+  const { left, right } = picked;
+  const sides: Record<Seat, Side> = { ...series.games[game - 1]!.sides };
   state.matchEntrants = { left, right };
   state.matchSides = sides;
   state.match = null;
@@ -339,8 +407,8 @@ export async function startMatch(): Promise<void> {
     notify('error', 'Could not prepare the entrants', err instanceof Error ? err.message : String(err));
     return;
   }
+  if (state.series?.id !== seriesId) return; // a newer match started while preparing
 
-  const settings = { ...state.settings };
   const matchId = newId();
   state.replayId = matchId;
   await persistReplay({
@@ -350,6 +418,7 @@ export async function startMatch(): Promise<void> {
     createdAt: new Date().toISOString(),
     arena: { version: ARENA_VERSION, loaderVersion: LOADER_VERSION },
     rules: { id: RULES_ID, digest: RULES_DIGEST },
+    series: { id: seriesId, game, of: GAMES_PER_MATCH },
     seats: {
       left: { sha256: left.sha256, size: left.size, metadata: left.metadata, side: sides.left },
       right: { sha256: right.sha256, size: right.size, metadata: right.metadata, side: sides.right },
@@ -399,12 +468,13 @@ export async function startMatch(): Promise<void> {
         if (replay?.id === matchId) await persistReplay(withResult(replay, result, snapshot));
         state.replays = await store.listReplays();
         audio.play('end');
-        if (result.kind === 'system-error') notify('error', 'The match stopped with a system error', result.message);
+        if (result.kind === 'system-error') notify('error', 'The game stopped with a system error', result.message);
         else if (result.kind === 'forfeit' && result.forfeit) {
           const f = result.forfeit;
           const title = f.reason === 'timeout' ? 'An entrant ran out of time' : f.reason === 'trap' ? 'An entrant crashed' : 'An entrant proposed an invalid move';
           notify('warning', title, `${f.side} (${f.seat} seat) forfeited: ${f.message}`);
         }
+        gameEnded(seriesId, game, result, picked, settings);
       },
     },
   });
@@ -414,17 +484,59 @@ export async function startMatch(): Promise<void> {
   const view = created.view;
   if (view.phase === 'failed') {
     notify('error', 'An entrant failed to initialize', view.failure ?? 'Unknown failure.');
+    // No board result: the match cannot be completed.
+    gameEnded(seriesId, game, { kind: 'system-error', message: view.failure ?? 'An entrant failed to initialize.', endRev: 0 }, picked, settings);
     return;
   }
-  if (!state.settings.beginPaused) created.play();
+  if (!settings.beginPaused) created.play();
 }
 
-export function stopMatch(): void {
+/** Record one game's result; after game 1 schedule game 2, after game 2 show the match result. */
+function gameEnded(
+  seriesId: string,
+  game: GameNumber,
+  result: MatchResult,
+  picked: Readonly<Record<Seat, CatalogEntry>>,
+  settings: ArenaState['settings'],
+): void {
+  const series = state.series;
+  if (!series || series.id !== seriesId || series.games[game - 1]!.result) return;
+  series.games[game - 1] = { ...series.games[game - 1]!, result: JSON.parse(JSON.stringify(result)) as MatchResult };
+  if (game === 1 && result.kind !== 'system-error') {
+    const delay = BETWEEN_GAMES_MS[state.settings.speed];
+    series.nextGameAt = Date.now() + delay;
+    state.announcement = `Game 1 is over. Game 2 starts in ${Math.ceil(delay / 1000)} seconds, colours swapped.`;
+    nextGameTimer = setTimeout(() => {
+      nextGameTimer = null;
+      void startGame(seriesId, 2, picked, settings);
+    }, delay);
+    return;
+  }
+  const played = series.games.filter((g) => g.result);
+  const summary = summarizeSeries(played);
+  series.summary = summary;
+  series.text = describeSeries(summary, { left: entrantName(picked.left), right: entrantName(picked.right) });
+  series.details = played.map(describeSeriesGame);
+  state.announcement = series.text;
+  notify(summary.complete ? 'info' : 'warning', summary.complete ? 'Match result' : 'Match incomplete', [series.text, ...series.details].join(' '));
+}
+
+function disposeController(): void {
   controller?.dispose();
   controller = null;
 }
 
-/** Same entrants and settings, colours exchanged; the play page's URL follows. */
+/** Stop the current game and any game 2 still waiting to start. */
+export function stopMatch(): void {
+  if (nextGameTimer) {
+    clearTimeout(nextGameTimer);
+    nextGameTimer = null;
+  }
+  if (state.series) state.series.nextGameAt = null;
+  disposeController();
+}
+
+/** A new two-game match with game 1's colours exchanged; the play page's URL follows. */
 export async function swapAndRematch(): Promise<void> {
   state.settings.leftSide = opponent(state.settings.leftSide);
   const config = currentPlayConfig();

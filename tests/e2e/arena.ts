@@ -49,14 +49,27 @@ export async function startMatch(page: Page): Promise<void> {
   await expect(page.locator('[data-page="play"][data-booted="true"]')).toBeVisible({ timeout: 30_000 });
 }
 
-export async function startAndFinish(page: Page): Promise<{ result: string; rev: number }> {
+/** Wait until both games of the match are over and the overall result is shown. */
+export async function waitForMatchResult(page: Page, timeout = 170_000): Promise<string> {
+  await expect(page.getByTestId('match-result')).toBeVisible({ timeout });
+  await expect(page.getByTestId('phase')).toHaveText('Finished');
+  return (await page.getByTestId('match-result').textContent()) ?? '';
+}
+
+/** Start a match and play it out: both games, then the match result. */
+export async function startAndFinish(page: Page): Promise<{ result: string; match: string; games: string; rev: number }> {
   await startMatch(page);
-  await expect(page.getByTestId('phase')).toHaveText('Finished', { timeout: 150_000 });
+  const match = await waitForMatchResult(page);
   const rev = Number(await page.getByTestId('rev').textContent());
   // Both panes must end on the same committed revision, each drawn by its own program.
   await expect(page.getByTestId('canvas-left')).toHaveAttribute('data-rev', String(rev));
   await expect(page.getByTestId('canvas-right')).toHaveAttribute('data-rev', String(rev));
-  return { result: (await page.getByTestId('result').textContent()) ?? '', rev };
+  return {
+    result: (await page.getByTestId('result').textContent()) ?? '',
+    match,
+    games: (await page.getByTestId('match-games').textContent()) ?? '',
+    rev,
+  };
 }
 
 /** A coarse fingerprint of a canvas, to tell two renderers (or two views) apart. */

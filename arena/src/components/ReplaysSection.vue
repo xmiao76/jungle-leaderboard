@@ -64,7 +64,10 @@ async function importReplay() {
             <span class="text-subtle">vs</span>
             {{ r.seats.right.metadata.title }} v{{ r.seats.right.metadata.gameVersion }}
           </p>
-          <p class="text-xs text-muted">{{ new Date(r.createdAt).toLocaleString() }} · {{ r.plies.length }} plies · {{ summary(r) }}</p>
+          <p class="text-xs text-muted">
+            <span v-if="r.series" class="font-semibold text-fg" data-testid="replay-game">Game {{ r.series.game }} of {{ r.series.of }} ·</span>
+            {{ new Date(r.createdAt).toLocaleString() }} · {{ r.plies.length }} plies · {{ summary(r) }}
+          </p>
         </div>
         <div class="flex gap-2">
           <button type="button" :class="BTN.secondary" data-testid="replay-open" @click="openReplay(r.id)">Open</button>

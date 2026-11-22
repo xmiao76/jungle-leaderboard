@@ -26,6 +26,11 @@ export interface ReplayV1 {
   readonly createdAt: string;
   readonly arena: { readonly version: string; readonly loaderVersion: string };
   readonly rules: { readonly id: string; readonly digest: string };
+  /**
+   * Which game of a two-game match this is (match/series.ts). Optional: replays from
+   * before matches had two games, and imported ones, may not carry it.
+   */
+  readonly series?: { readonly id: string; readonly game: number; readonly of: number };
   readonly seats: Readonly<Record<Seat, ReplaySeat>>;
   readonly settings: {
     readonly firstSide: Side;
@@ -97,6 +102,13 @@ export function validateReplay(data: unknown): ReplayCheck {
   }
   if (!Array.isArray(data['plies'])) issues.push('The ply list is missing.');
   if (typeof data['id'] !== 'string' || typeof data['createdAt'] !== 'string') issues.push('The replay id or date is missing.');
+  const series = data['series'];
+  if (series !== undefined) {
+    const ok = isObject(series) && typeof series['id'] === 'string'
+      && Number.isInteger(series['of']) && (series['of'] as number) >= 1
+      && Number.isInteger(series['game']) && (series['game'] as number) >= 1 && (series['game'] as number) <= (series['of'] as number);
+    if (!ok) issues.push('The match (series) record is malformed.');
+  }
   if (issues.length > 0) return { ok: false, issues };
 
   // Re-derive every snapshot through the referee: the record must reproduce itself.
