@@ -106,5 +106,5 @@ export async function uploadTestEntrant(page: Page, seat: 'left' | 'right', vers
 /** A quick, decisive pairing: the test entrant (always index 0) on the left, the real game on the right. */
 export async function setUpTestVsSample(page: Page): Promise<void> {
   await uploadTestEntrant(page, 'left');
-  await chooseVersion(page, 'right', SAMPLE, 'v1.0.0');
+  await chooseVersion(page, 'right', SAMPLE, 'v1.1.0');
 }

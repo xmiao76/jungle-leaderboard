@@ -1,6 +1,6 @@
 /**
  * The conformance host's referee: an independent TypeScript implementation of the
- * desktop-jungle-v1 rulebook (it shares no code with the Rust core it is checking).
+ * desktop-jungle-v2 rulebook (it shares no code with the Rust core it is checking).
  * Works directly on jco-shaped snapshots: empty squares and "no winner" are undefined.
  */
 
@@ -108,14 +108,37 @@ export function apply(state: State, ply: Ply): State {
   const mover = state.toPlay;
   const foe = other(mover);
   const quiet = captured ? 0 : state.noCapturePlies + 1;
+  const history = [...state.history, { ...ply }];
   let status: State['status'] = 'playing';
   let winner: Side | undefined;
   let reason = '';
   if (ply.dst === DENS[foe]) [status, winner, reason] = ['won', mover, 'den'];
   else if (!board.some((p) => p?.owner === foe)) [status, winner, reason] = ['won', mover, 'elimination'];
   else if (movesFor(board, foe).length === 0) [status, winner, reason] = ['won', mover, 'immobilization'];
+  else if (timesSeen(board, history, quiet) >= 3) [status, winner, reason] = ['drawn', undefined, 'repetition'];
   else if (quiet >= 100) [status, winner, reason] = ['drawn', undefined, 'no-capture'];
-  return { ...state, rev: state.rev + 1, board, toPlay: foe, history: [...state.history, { ...ply }], noCapturePlies: quiet, status, winner, reason };
+  return { ...state, rev: state.rev + 1, board, toPlay: foe, history, noCapturePlies: quiet, status, winner, reason };
+}
+
+/**
+ * How often `board` (with the side to move after `history`) has occurred: walk the quiet moves
+ * since the last capture backwards, moving each piece home again, and compare every second
+ * board (the same side to move).
+ */
+function timesSeen(board: (Piece | undefined)[], history: Ply[], quiet: number): number {
+  const same = (a: Piece | undefined, b: Piece | undefined) => a?.owner === b?.owner && a?.kind === b?.kind;
+  let count = 1;
+  let earlier = board;
+  const steps = Math.min(quiet, history.length);
+  for (let back = 1; back <= steps; back += 1) {
+    const { src, dst } = history[history.length - back]!;
+    const prior = earlier.slice();
+    prior[src] = prior[dst];
+    prior[dst] = undefined;
+    earlier = prior;
+    if (back % 2 === 0 && earlier.every((p, i) => same(p, board[i]))) count += 1;
+  }
+  return count;
 }
 
 export function forfeit(state: State, loser: Side, reason: 'timeout' | 'trap' | 'invalid-move'): State {

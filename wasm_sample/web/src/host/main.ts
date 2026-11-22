@@ -185,7 +185,7 @@ async function run(releaseBytes: Uint8Array, source: string): Promise<void> {
     log(`replay seek: ${seekChecks} revisions re-rendered by fresh instances in both orientations`);
     const terminal = matches.every((m) => m.status === 'won' || m.status === 'drawn');
     const releaseNeverForfeits = matches.every((m) => !(m.status === 'forfeited' && m.winner !== m.releaseSide));
-    const rulesMatch = info['rulesId'] === 'desktop-jungle-v1' && info['rulesDigest'] === 'a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63';
+    const rulesMatch = info['rulesId'] === 'desktop-jungle-v2' && info['rulesDigest'] === 'a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57';
     const ok = terminal && releaseNeverForfeits && rulesMatch && renderStable && matchesPublished !== false;
     result.textContent = JSON.stringify({ ok, source, sha256: hash, publishedHashMatches: matchesPublished, rulesMatch, renderStable, info, matches, seekChecks, elapsedMs: Math.round(performance.now() - started), userAgent: navigator.userAgent }, null, 2);
     result.dataset['status'] = ok ? 'passed' : 'failed';
@@ -195,7 +195,7 @@ async function run(releaseBytes: Uint8Array, source: string): Promise<void> {
   }
 }
 
-$('run').addEventListener('click', async () => run(await fetchBytes('../jungle-opus55-1.0.0.wasm'), 'published site'));
+$('run').addEventListener('click', async () => run(await fetchBytes('../jungle-opus55-1.1.0.wasm'), 'published site'));
 $('file').addEventListener('change', async () => {
   const file = ($('file') as HTMLInputElement).files?.[0];
   if (file) await run(new Uint8Array(await file.arrayBuffer()), file.name);

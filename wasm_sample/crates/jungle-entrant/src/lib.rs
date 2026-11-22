@@ -1,4 +1,4 @@
-//! Arena entrant `jungle-opus55-1.0.0.wasm`: the jungle-core engine and renderer behind
+//! Arena entrant `jungle-opus55-1.1.0.wasm`: the jungle-core engine and renderer behind
 //! `jungle:arena/competitor@1.0.0`. Per-instance state lives in this instance's memory;
 //! the Arena instantiates the binary once per seat.
 

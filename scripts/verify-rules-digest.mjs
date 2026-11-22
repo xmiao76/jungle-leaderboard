@@ -5,8 +5,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-export const RULES_DIGEST = 'a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63';
-export const RULES_PATH = fileURLToPath(new URL('../sdk/rules/desktop-jungle-v1.json', import.meta.url));
+export const RULES_DIGEST = 'a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57';
+export const RULES_PATH = fileURLToPath(new URL('../sdk/rules/desktop-jungle-v2.json', import.meta.url));
 
 export function rulesDigest(path = RULES_PATH) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');

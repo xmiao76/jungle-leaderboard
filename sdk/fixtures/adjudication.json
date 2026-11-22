@@ -58,5 +58,35 @@
     "status": "playing",
     "winner": null,
     "reason": ""
+  },
+  {
+    "name": "repetition-not-yet",
+    "board": { "6": "blue:dog", "42": "red:cat" },
+    "moves": [[42, 43], [6, 5], [43, 42], [5, 6], [42, 43], [6, 5], [43, 42]],
+    "quietBefore": 0,
+    "quietAfter": 7,
+    "status": "playing",
+    "winner": null,
+    "reason": ""
+  },
+  {
+    "name": "repetition",
+    "board": { "6": "blue:dog", "42": "red:cat" },
+    "moves": [[42, 43], [6, 5], [43, 42], [5, 6], [42, 43], [6, 5], [43, 42], [5, 6]],
+    "quietBefore": 0,
+    "quietAfter": 8,
+    "status": "drawn",
+    "winner": null,
+    "reason": "repetition"
+  },
+  {
+    "name": "repetition-before-no-capture",
+    "board": { "6": "blue:dog", "42": "red:cat" },
+    "moves": [[42, 43], [6, 5], [43, 42], [5, 6], [42, 43], [6, 5], [43, 42], [5, 6]],
+    "quietBefore": 92,
+    "quietAfter": 100,
+    "status": "drawn",
+    "winner": null,
+    "reason": "repetition"
   }
 ]

@@ -9,7 +9,7 @@ async function lateMatch(page: Page, file: string, thinkDeadline?: string) {
   await importWasm(page, fixture(file));
   await playInSeat(page, 'left');
   await setFastPlay(page);
-  await chooseVersion(page, 'right', SAMPLE, 'v1.0.0');
+  await chooseVersion(page, 'right', SAMPLE, 'v1.1.0');
   await page.getByTestId('left-red').check();
   if (thinkDeadline) await page.getByTestId('think-deadline').selectOption({ label: thinkDeadline });
   await startMatch(page);
@@ -106,8 +106,8 @@ test('works, and says so, when IndexedDB is unavailable', async ({ page }) => {
   await expect(page.locator('[data-notice="storage"]')).toContainText('IndexedDB');
   await setFastPlay(page);
   // Uploads would not survive the page change without storage, so both seats use the public game.
-  await chooseVersion(page, 'left', SAMPLE, 'v1.0.0');
-  await chooseVersion(page, 'right', SAMPLE, 'v1.0.0');
+  await chooseVersion(page, 'left', SAMPLE, 'v1.1.0');
+  await chooseVersion(page, 'right', SAMPLE, 'v1.1.0');
   await startMatch(page);
   await waitForMatchResult(page, 240_000);
 });

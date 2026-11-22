@@ -1,4 +1,4 @@
-//! The `desktop-jungle-v1` rulebook.
+//! The `desktop-jungle-v2` rulebook (v1 plus the repetition draw).
 //!
 //! One move generator serves everything — the legal list, validation, adjudication and
 //! the search — over a compact board of one byte per square.
@@ -12,6 +12,8 @@ const BLUE_TRAPS: [u8; 3] = [2, 4, 10];
 /// `openingByAscendingRank`, rat first.
 const OPENING: [[u8; 8]; 2] = [[48, 50, 54, 44, 46, 56, 62, 42], [14, 12, 8, 18, 16, 6, 0, 20]];
 pub const NO_CAPTURE_LIMIT: u32 = 100;
+/// A committed move that produces a position for this many times draws the game.
+pub const REPETITION_LIMIT: u32 = 3;
 
 const fn table<const N: usize>(squares: [u8; N]) -> [bool; SQUARES] {
     let mut t = [false; SQUARES];
@@ -221,6 +223,37 @@ pub fn piece_count(cells: &Cells, side: Side) -> usize {
     cells.iter().filter(|&&c| owner_of(c) == Some(side)).count()
 }
 
+// ---- Repetition ---------------------------------------------------------------------------
+
+/// The positions before the current one that could still equal it, oldest first: those since
+/// the last capture. A capture can never be undone and every later move only relocated a
+/// piece, so stepping the trailing quiet moves back from `cells` recreates each earlier
+/// position exactly. `quiet` bounds them (a synthetic start may carry more than its history).
+pub fn earlier_positions(cells: &Cells, to_play: Side, history: &[Move], quiet: u32) -> Vec<(Cells, Side)> {
+    let reversible = (quiet as usize).min(history.len());
+    let mut board = *cells;
+    let mut side = to_play;
+    let mut out: Vec<(Cells, Side)> = history
+        .iter()
+        .rev()
+        .take(reversible)
+        .map(|mv| {
+            board[mv.src as usize] = board[mv.dst as usize];
+            board[mv.dst as usize] = 0;
+            side = side.opponent();
+            (board, side)
+        })
+        .collect();
+    out.reverse();
+    out
+}
+
+/// How many times the current position (squares and side to move) has occurred, this one included.
+pub fn position_occurrences(cells: &Cells, to_play: Side, history: &[Move], quiet: u32) -> u32 {
+    let earlier = earlier_positions(cells, to_play, history, quiet);
+    1 + earlier.iter().filter(|(c, side)| *side == to_play && c == cells).count() as u32
+}
+
 // ---- Snapshot-level API -------------------------------------------------------------------
 
 pub fn initial_snapshot(first_side: Side) -> Snapshot {
@@ -258,8 +291,9 @@ pub enum RuleError {
     Illegal(Move),
 }
 
-/// Terminal checks in profile order: den, elimination, immobilization, no-capture.
-pub fn adjudicate(cells: &Cells, mover: Side, dst: usize, quiet: u32) -> (Phase, Option<Side>, Reason) {
+/// Terminal checks in profile order: den, elimination, immobilization, repetition, no-capture.
+/// `occurrences` counts the new position, as `position_occurrences` returns it.
+pub fn adjudicate(cells: &Cells, mover: Side, dst: usize, quiet: u32, occurrences: u32) -> (Phase, Option<Side>, Reason) {
     let defender = mover.opponent();
     if dst == DEN[defender.index()] as usize {
         (Phase::Won, Some(mover), Reason::Den)
@@ -267,6 +301,8 @@ pub fn adjudicate(cells: &Cells, mover: Side, dst: usize, quiet: u32) -> (Phase,
         (Phase::Won, Some(mover), Reason::Elimination)
     } else if !has_legal_move(cells, defender) {
         (Phase::Won, Some(mover), Reason::Immobilization)
+    } else if occurrences >= REPETITION_LIMIT {
+        (Phase::Drawn, None, Reason::Repetition)
     } else if quiet >= NO_CAPTURE_LIMIT {
         (Phase::Drawn, None, Reason::NoCapture)
     } else {
@@ -287,9 +323,10 @@ pub fn apply_move(snapshot: &Snapshot, mv: Move) -> Result<Snapshot, RuleError> 
     cells[mv.dst as usize] = cells[mv.src as usize];
     cells[mv.src as usize] = 0;
     let quiet = if captured { 0 } else { snapshot.no_capture_plies + 1 };
-    let (status, winner, reason) = adjudicate(&cells, snapshot.to_play, mv.dst as usize, quiet);
     let mut history = snapshot.history.clone();
     history.push(mv);
+    let occurrences = position_occurrences(&cells, snapshot.to_play.opponent(), &history, quiet);
+    let (status, winner, reason) = adjudicate(&cells, snapshot.to_play, mv.dst as usize, quiet, occurrences);
     Ok(Snapshot {
         rev: snapshot.rev + 1,
         board: board_of(&cells),

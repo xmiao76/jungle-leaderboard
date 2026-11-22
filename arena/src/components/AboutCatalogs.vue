@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { sdkUrl } from '../app/paths';
 import { MAX_UPLOAD_BYTES } from '../loader/limits';
-import { RULES_DIGEST } from '../referee';
+import { RULES_DIGEST, RULES_ID } from '../referee';
 import { SECTION_TITLE } from '../ui/classes';
 </script>
 
@@ -33,7 +33,7 @@ import { SECTION_TITLE } from '../ui/classes';
         </p>
         <p>
           Build against <a :href="sdkUrl('jungle.wit')" class="text-accent underline underline-offset-2">jungle.wit</a> and the
-          <a :href="sdkUrl('desktop-jungle-v1.json')" class="text-accent underline underline-offset-2">rules profile</a>; any language that can
+          <a :href="sdkUrl(`${RULES_ID}.json`)" class="text-accent underline underline-offset-2">rules profile</a>; any language that can
           produce a WebAssembly Component works.
         </p>
       </div>

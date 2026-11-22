@@ -71,6 +71,12 @@ describe('match result labels', () => {
     expect(seriesHeadline({ score, complete: false, winner: null }, names)).toBe('No match result');
   });
 
+  it('explains a draw by repetition', () => {
+    const repeated = { kind: 'board', status: 'drawn', winner: null, winnerSeat: null, reason: 'repetition', ...base } as const;
+    expect(describeResult(repeated, { red: 'Alpha', blue: 'Beta' })).toBe('Draw: the same position occurred for the third time.');
+    expect(gameOutcome(game(repeated), names)).toBe('Drawn · the same position occurred for the third time');
+  });
+
   it('says how each game ended and why', () => {
     expect(gameOutcome(game({ kind: 'board', status: 'won', winner: 'blue', winnerSeat: 'right', reason: 'den', ...base }), names)).toBe(
       'Alpha v1.0.0 won · reached the enemy den',

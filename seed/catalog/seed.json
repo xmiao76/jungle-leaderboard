@@ -3,19 +3,19 @@
   "version": 1,
   "entries": [
     {
-      "sha256": "d21e646924498b29a72ffb9ef06b5bfb2f39f174166cdfe1d3db40b992ae78f9",
-      "size": 121655,
-      "file": "jungle-claude-opus-5-5-sample-1-0-0-d21e6469.wasm",
+      "sha256": "8842387f3251a950d8081bb713cfb0876e243648583784e563d9e637c6db50e8",
+      "size": 134255,
+      "file": "jungle-claude-opus-5-5-sample-1-1-0-8842387f.wasm",
       "metadata": {
         "title": "Jungle — Claude-Opus-5.5 sample",
-        "gameVersion": "1.0.0",
+        "gameVersion": "1.1.0",
         "model": "Claude-Opus-5.5",
         "codeAgent": "ClaudeCode",
         "githubUrl": "https://github.com/xmiao76/jungle-leaderboard",
-        "engineVersion": "jungle-core 1.0.0 (alpha-beta, iterative deepening)",
+        "engineVersion": "jungle-core 1.1.0 (alpha-beta, iterative deepening, repetition-aware)",
         "runtime": "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0",
-        "rulesId": "desktop-jungle-v1",
-        "rulesDigest": "a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63"
+        "rulesId": "desktop-jungle-v2",
+        "rulesDigest": "a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57"
       },
       "addedAt": "2026-11-22",
       "provenance": {

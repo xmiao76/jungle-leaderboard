@@ -5,17 +5,21 @@
  * Anything else is a 404. The Arena verifies every download against the listed hash.
  */
 import { CATALOG_FORMAT, type PublicEntry } from '../arena/src/catalog/catalog';
+import { RULES_DIGEST, RULES_ID } from '../arena/src/referee/profile';
 import { LISTED_COLUMNS, binaryKey, rowToPublicEntry, type ListedRow } from './entrant-row';
 
 const MANIFEST = 'manifest.json';
 const BINARY = /^([0-9a-f]{64})\.wasm$/;
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 
-const LIST_LISTED = `SELECT ${LISTED_COLUMNS} FROM entrants WHERE status = 'listed' ORDER BY title, created_at, sha256`;
-const IS_LISTED = "SELECT 1 AS listed FROM entrants WHERE sha256 = ? AND status = 'listed'";
+// Only entrants built for the referee's current rules: one admitted under an earlier rules
+// version stays in the database but is neither listed nor served.
+const PLAYABLE = "status = 'listed' AND rules_id = ? AND rules_digest = ?";
+const LIST_LISTED = `SELECT ${LISTED_COLUMNS} FROM entrants WHERE ${PLAYABLE} ORDER BY title, created_at, sha256`;
+const IS_LISTED = `SELECT 1 AS listed FROM entrants WHERE sha256 = ? AND ${PLAYABLE}`;
 
 export async function listPublicEntries(db: D1Database): Promise<PublicEntry[]> {
-  const { results } = await db.prepare(LIST_LISTED).all<ListedRow>();
+  const { results } = await db.prepare(LIST_LISTED).bind(RULES_ID, RULES_DIGEST).all<ListedRow>();
   return results.map(rowToPublicEntry);
 }
 
@@ -28,7 +32,7 @@ async function manifestResponse(db: D1Database): Promise<Response> {
 }
 
 async function binaryResponse(env: Env, sha256: string): Promise<Response> {
-  const listed = await env.DB.prepare(IS_LISTED).bind(sha256).first();
+  const listed = await env.DB.prepare(IS_LISTED).bind(sha256, RULES_ID, RULES_DIGEST).first();
   if (!listed) return notFound();
   const object = await env.ENTRANTS.get(binaryKey(sha256));
   if (!object) return notFound();

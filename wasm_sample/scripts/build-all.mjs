@@ -1,5 +1,5 @@
 // One command to rebuild both outputs from a clean checkout:
-//   1. the single-file Arena entrant  dist/jungle-opus55-1.0.0.wasm  (+ fixture and test builds)
+//   1. the single-file Arena entrant  dist/jungle-opus55-1.1.0.wasm  (+ fixture and test builds)
 //   2. the standalone static site      web/dist/
 //
 //   node scripts/build-all.mjs [--skip-web-build]
@@ -15,7 +15,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 const PUBLIC = join(ROOT, 'web', 'public');
 const TARGET = join(ROOT, 'target', 'wasm32-unknown-unknown', 'release');
-export const RELEASE_NAME = 'jungle-opus55-1.0.0.wasm';
+export const RELEASE_NAME = 'jungle-opus55-1.1.0.wasm';
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const run = (cmd, args, cwd = ROOT) => execFileSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' && cmd !== 'cargo' && cmd !== 'node' });
@@ -51,7 +51,7 @@ const releaseHash = sha256(release);
 copyFileSync(join(DIST, RELEASE_NAME), join(PUBLIC, RELEASE_NAME));
 writeFileSync(join(PUBLIC, `${RELEASE_NAME}.sha256`), `${releaseHash}  ${RELEASE_NAME}\n`);
 copyFileSync(join(ROOT, 'wit', 'jungle.wit'), join(releaseDir, 'jungle.wit'));
-copyFileSync(join(ROOT, 'spec', 'rules', 'desktop-jungle-v1.json'), join(releaseDir, 'desktop-jungle-v1.json'));
+copyFileSync(join(ROOT, 'spec', 'rules', 'desktop-jungle-v2.json'), join(releaseDir, 'desktop-jungle-v2.json'));
 writeFileSync(join(releaseDir, 'embedded.wit'), await componentWit(release));
 const typed = await transpileBytes(release, { name: 'jungle-opus55', instantiation: 'async', emitTypescriptDeclarations: true });
 for (const [name, bytes] of Object.entries(typed.files)) {

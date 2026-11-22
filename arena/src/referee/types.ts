@@ -18,7 +18,7 @@ export type Level = (typeof LEVELS)[number];
 export const PHASES = ['playing', 'won', 'drawn', 'forfeited'] as const;
 export type Phase = (typeof PHASES)[number];
 
-export type BoardReason = 'den' | 'elimination' | 'immobilization' | 'no-capture';
+export type BoardReason = 'den' | 'elimination' | 'immobilization' | 'repetition' | 'no-capture';
 export type ForfeitReason = 'timeout' | 'trap' | 'invalid-move';
 export type Reason = '' | BoardReason | ForfeitReason;
 

@@ -31,6 +31,7 @@ const REASON_TEXT: Readonly<Record<string, string>> = {
   den: 'reached the enemy den',
   elimination: 'captured every enemy piece',
   immobilization: 'left the opponent without a legal move',
+  repetition: 'the same position occurred for the third time',
   'no-capture': '100 plies passed without a capture',
   timeout: 'the opponent ran out of time',
   trap: 'the opponent crashed',

@@ -1,5 +1,5 @@
 {
-  "id": "desktop-jungle-v1",
+  "id": "desktop-jungle-v2",
   "size": [7, 9],
   "index": "row*7+col; origin top-left",
   "defaultFirst": "red",
@@ -15,6 +15,7 @@
   "trapCapture": "pre-move ranks; enemy trap sets rank to zero; trapped defender capturable by any rank; trapped attacker cannot capture an untrapped defender",
   "normalCapture": "rat beats elephant; elephant cannot take rat; otherwise attacker rank >= defender rank",
   "noCapturePlies": 100,
-  "repetition": "no separate adjudication",
-  "terminalOrder": ["den", "elimination", "immobilization", "no-capture"]
+  "repetition": "draw when a committed move produces a position (all 63 squares and the side to move) for the third time in the game",
+  "repetitionOccurrences": 3,
+  "terminalOrder": ["den", "elimination", "immobilization", "repetition", "no-capture"]
 }

@@ -1,5 +1,6 @@
 import { isLegal, legalMovesFor } from './movegen';
-import { DEN, NO_CAPTURE_LIMIT } from './profile';
+import { DEN, NO_CAPTURE_LIMIT, REPETITION_LIMIT } from './profile';
+import { positionOccurrences } from './repetition';
 import { opponent, type Board, type ForfeitReason, type PlyMove, type Side, type Snapshot } from './types';
 
 export class IllegalMoveError extends Error {
@@ -14,8 +15,8 @@ interface Outcome {
 
 const PLAYING: Outcome = { status: 'playing', winner: null, reason: '' };
 
-/** Terminal checks in the profile's order: den, elimination, immobilization, no-capture. */
-function adjudicate(board: Board, mover: Side, dst: number, noCapturePlies: number): Outcome {
+/** Terminal checks in the profile's order: den, elimination, immobilization, repetition, no-capture. */
+function adjudicate(board: Board, mover: Side, dst: number, noCapturePlies: number, occurrences: number): Outcome {
   const defender = opponent(mover);
   if (dst === DEN[defender]) return { status: 'won', winner: mover, reason: 'den' };
   if (!board.some((piece) => piece?.owner === defender)) {
@@ -24,6 +25,7 @@ function adjudicate(board: Board, mover: Side, dst: number, noCapturePlies: numb
   if (legalMovesFor(board, defender).length === 0) {
     return { status: 'won', winner: mover, reason: 'immobilization' };
   }
+  if (occurrences >= REPETITION_LIMIT) return { status: 'drawn', winner: null, reason: 'repetition' };
   if (noCapturePlies >= NO_CAPTURE_LIMIT) return { status: 'drawn', winner: null, reason: 'no-capture' };
   return PLAYING;
 }
@@ -47,14 +49,15 @@ export function applyMove(snapshot: Snapshot, move: PlyMove): Snapshot {
     return piece;
   });
   const noCapturePlies = captured ? 0 : snapshot.noCapturePlies + 1;
-  const outcome = adjudicate(board, snapshot.toPlay, move.dst, noCapturePlies);
+  const history = [...snapshot.history, { src: move.src, dst: move.dst }];
+  const outcome = adjudicate(board, snapshot.toPlay, move.dst, noCapturePlies, positionOccurrences(board, history, noCapturePlies));
 
   return {
     ...snapshot,
     rev: snapshot.rev + 1,
     board,
     toPlay: opponent(snapshot.toPlay),
-    history: [...snapshot.history, { src: move.src, dst: move.dst }],
+    history,
     noCapturePlies,
     ...outcome,
   };

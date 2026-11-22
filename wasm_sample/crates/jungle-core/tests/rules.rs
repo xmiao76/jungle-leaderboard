@@ -48,12 +48,22 @@ fn portable_conformance_cases() {
     }
 }
 
+/// A row commits one `move`, or several `moves` in order (Red first, alternating sides).
+fn plies(row: &Value) -> Vec<Move> {
+    match row["moves"].as_array() {
+        Some(list) => list.iter().map(mv).collect(),
+        None => vec![mv(&row["move"])],
+    }
+}
+
 #[test]
 fn adjudication_rows() {
     let rows: Vec<Value> = serde_json::from_str(ADJUDICATION).unwrap();
+    assert!(rows.iter().any(|r| r["reason"] == "repetition"), "the brief's repetition rows are present");
     for row in &rows {
         let before = sparse(&row["board"], Side::Red, row["quietBefore"].as_u64().unwrap() as u32);
-        let after = apply_move(&before, mv(&row["move"])).unwrap();
+        let sequence = plies(row);
+        let after = sequence.iter().fold(before.clone(), |s, &m| apply_move(&s, m).unwrap());
         let name = row["name"].as_str().unwrap();
         assert_eq!(after.no_capture_plies as u64, row["quietAfter"].as_u64().unwrap(), "{name}");
         let status = match after.status {
@@ -65,10 +75,33 @@ fn adjudication_rows() {
         assert_eq!(status, row["status"].as_str().unwrap(), "{name}");
         assert_eq!(after.winner.map(Side::name), row["winner"].as_str(), "{name}");
         assert_eq!(after.reason.as_str(), row["reason"].as_str().unwrap(), "{name}");
-        assert_eq!(after.rev, before.rev + 1, "{name}");
-        assert_eq!(after.history.len(), 1, "{name}");
-        assert_eq!(after.to_play, Side::Blue, "{name}: to-play passes even on a terminal move");
+        assert_eq!(after.rev, before.rev + sequence.len() as u32, "{name}");
+        assert_eq!(after.history.len(), sequence.len(), "{name}");
+        let expected_turn = if sequence.len() % 2 == 1 { Side::Blue } else { Side::Red };
+        assert_eq!(after.to_play, expected_turn, "{name}: to-play passes even on a terminal move");
     }
+}
+
+#[test]
+fn repetition_counts_positions_from_the_history() {
+    let board: Value = serde_json::json!({ "42": "red:cat", "6": "blue:dog" });
+    let loop_moves = [(42, 43), (6, 5), (43, 42), (5, 6)].map(|(src, dst)| Move { src, dst });
+    let mut s = sparse(&board, Side::Red, 0);
+    let mut counts = vec![];
+    for &m in loop_moves.iter().chain(loop_moves.iter()) {
+        s = apply_move(&s, m).unwrap();
+        counts.push(position_occurrences(&cells_of(&s.board), s.to_play, &s.history, s.no_capture_plies));
+    }
+    assert_eq!(counts, [1, 1, 1, 2, 2, 2, 2, 3]);
+    assert_eq!((s.status, s.reason), (Phase::Drawn, Reason::Repetition));
+}
+
+#[test]
+fn repetition_never_reaches_back_past_a_capture() {
+    let board: Value = serde_json::json!({ "42": "red:wolf", "43": "blue:cat", "6": "blue:dog" });
+    let s = apply_move(&sparse(&board, Side::Red, 0), Move { src: 42, dst: 43 }).unwrap();
+    assert_eq!(s.no_capture_plies, 0);
+    assert!(earlier_positions(&cells_of(&s.board), s.to_play, &s.history, s.no_capture_plies).is_empty());
 }
 
 #[test]

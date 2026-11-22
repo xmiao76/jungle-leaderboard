@@ -112,12 +112,13 @@ for (const [code, text] of [
   ['den', 'reached the enemy den'],
   ['elimination', 'captured every enemy piece'],
   ['immobilization', 'opponent has no legal move'],
+  ['repetition', 'same position three times'],
   ['no-capture', '100 plies without a capture'],
   ['timeout', 'opponent ran out of time'],
   ['trap', 'opponent crashed'],
   ['invalid-move', 'opponent made an invalid move'],
 ]) sprites.push([`reason-${code}`, textSprite(text, 15, { strokeWidth: 3.5 })]);
-sprites.push(['mark', textSprite('Jungle · Claude-Opus-5.5 sample v1.0.0', 9, { fill: '#ffffff', stroke: '#1b2016', strokeWidth: 2.2 })]);
+sprites.push(['mark', textSprite('Jungle · Claude-Opus-5.5 sample v1.1.0', 9, { fill: '#ffffff', stroke: '#1b2016', strokeWidth: 2.2 })]);
 
 // ---- Pack: "JATL" | u16 version | u16 count | entries | pixels, then raw deflate -------------
 

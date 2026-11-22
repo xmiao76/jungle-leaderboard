@@ -18,9 +18,11 @@ describe('host referee (independent of the Rust core)', () => {
   });
 
   it.each(adjudication.map((a) => [a.name, a] as const))('adjudicates %s', (_n, a) => {
-    const after = apply(sparse(a.board, a.quietBefore), { src: a.move[0]!, dst: a.move[1]! });
+    // A row commits one `move`, or several `moves` in order (Red first, alternating sides).
+    const plies = ('moves' in a ? a.moves : [a.move]) as number[][];
+    const after = plies.reduce((s, [src, dst]) => apply(s, { src: src!, dst: dst! }), sparse(a.board, a.quietBefore));
     expect([after.status, after.winner ?? null, after.reason, after.noCapturePlies]).toEqual([a.status, a.winner, a.reason, a.quietAfter]);
-    expect(after.toPlay).toBe('blue');
+    expect(after.toPlay).toBe(plies.length % 2 === 1 ? 'blue' : 'red');
   });
 
   it('meets the opening handshake for both first movers', () => {

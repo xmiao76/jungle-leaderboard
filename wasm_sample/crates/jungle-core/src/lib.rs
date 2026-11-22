@@ -13,11 +13,11 @@ pub use types::*;
 /// Identity reported by `info()` and shown in the standalone menu.
 pub mod identity {
     pub const TITLE: &str = "Jungle — Claude-Opus-5.5 sample";
-    pub const GAME_VERSION: &str = "1.0.0";
+    pub const GAME_VERSION: &str = "1.1.0";
     pub const MODEL: &str = "Claude-Opus-5.5";
     pub const CODE_AGENT: &str = "ClaudeCode";
     pub const GITHUB_URL: &str = "https://github.com/xmiao76/jungle-leaderboard";
-    pub const ENGINE_VERSION: &str = "jungle-core 1.0.0 (alpha-beta, iterative deepening)";
+    pub const ENGINE_VERSION: &str = "jungle-core 1.1.0 (alpha-beta, iterative deepening, repetition-aware)";
     pub const RUNTIME: &str = "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0";
 }
 

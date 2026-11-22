@@ -175,3 +175,63 @@ fn terminal_and_forfeit_snapshots_render() {
     let over = r.render(&f, false, 1000, None).to_vec();
     assert_ne!(live, over, "the result banner is drawn");
 }
+
+/// Blue starts a shuffle (dog 6↔5) and Red mirrors it (cat 42↔43). After seven plies Red is
+/// to move with the cat on 43, and 43 → 42 would recreate the starting position for the third
+/// time: a draw by repetition. `extra` decides who is ahead.
+fn shuffled(extra: (usize, Piece)) -> Snapshot {
+    let mut board: Board = [None; SQUARES];
+    board[42] = Some(Piece { owner: Side::Red, kind: Animal::Cat });
+    board[6] = Some(Piece { owner: Side::Blue, kind: Animal::Dog });
+    board[extra.0] = Some(extra.1);
+    let start = Snapshot {
+        rev: 0,
+        board,
+        first_side: Side::Blue,
+        to_play: Side::Blue,
+        history: vec![],
+        no_capture_plies: 0,
+        status: Phase::Playing,
+        winner: None,
+        reason: Reason::None,
+    };
+    [(6, 5), (42, 43), (5, 6), (43, 42), (6, 5), (42, 43), (5, 6)]
+        .iter()
+        .fold(start, |s, &(src, dst)| apply_move(&s, Move { src, dst }).unwrap())
+}
+
+const BACK: Move = Move { src: 43, dst: 42 };
+
+#[test]
+fn the_shuffle_fixture_really_ends_in_a_repetition() {
+    let s = shuffled((62, Piece { owner: Side::Red, kind: Animal::Elephant }));
+    let drawn = apply_move(&s, BACK).unwrap();
+    assert_eq!((drawn.status, drawn.reason), (Phase::Drawn, Reason::Repetition));
+}
+
+#[test]
+fn ahead_it_refuses_the_move_that_draws_by_repetition() {
+    let s = shuffled((62, Piece { owner: Side::Red, kind: Animal::Elephant }));
+    let legal = legal_moves(&s);
+    let chosen = legal[choose_index(&s, &legal, params(20_000, 5)) as usize];
+    assert_ne!(chosen, BACK, "a side that is ahead keeps playing instead of repeating");
+}
+
+#[test]
+fn behind_it_takes_the_draw_by_repetition() {
+    let s = shuffled((0, Piece { owner: Side::Blue, kind: Animal::Elephant }));
+    let legal = legal_moves(&s);
+    let chosen = legal[choose_index(&s, &legal, params(20_000, 5)) as usize];
+    assert_eq!(chosen, BACK, "a side that is behind settles for the draw");
+}
+
+#[test]
+fn without_the_game_history_the_repetition_is_invisible() {
+    // The same board searched as a fresh position: the third occurrence cannot be known, so
+    // stepping back is just another move. This is why choose_index passes the history.
+    let s = shuffled((0, Piece { owner: Side::Blue, kind: Animal::Elephant }));
+    let fresh = search(&cells_of(&s.board), s.to_play, s.no_capture_plies, s.rev, params(20_000, 5));
+    let informed = choose_index(&s, &legal_moves(&s), params(20_000, 5));
+    assert_eq!(legal_moves(&s)[informed as usize], BACK);
+    assert!(fresh.score < 0, "fresh search sees only a material deficit, got {}", fresh.score);
+}

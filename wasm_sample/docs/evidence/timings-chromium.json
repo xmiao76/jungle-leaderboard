@@ -1,14 +1,14 @@
 {
-  "coldLoadMs": 235,
+  "coldLoadMs": 201,
   "easyThinkMs": 9,
   "easyFramesDuringSearch": 0,
   "easyMaxFrameGapMs": 11,
-  "mediumThinkMs": 87,
-  "mediumFramesDuringSearch": 6,
+  "mediumThinkMs": 80,
+  "mediumFramesDuringSearch": 5,
   "mediumMaxFrameGapMs": 17,
   "hardThinkMs": 1000,
   "hardFramesDuringSearch": 60,
   "hardMaxFrameGapMs": 17,
   "browser": "chromium",
-  "at": "2026-11-22T09:11:39.218Z"
+  "at": "2026-11-22T21:39:17.928Z"
 }

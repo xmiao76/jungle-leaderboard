@@ -4,8 +4,8 @@ pub const COLS: usize = 7;
 pub const ROWS: usize = 9;
 pub const SQUARES: usize = COLS * ROWS;
 
-pub const RULES_ID: &str = "desktop-jungle-v1";
-pub const RULES_DIGEST: &str = "a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63";
+pub const RULES_ID: &str = "desktop-jungle-v2";
+pub const RULES_DIGEST: &str = "a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57";
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum Side {
@@ -105,6 +105,7 @@ pub enum Reason {
     Den,
     Elimination,
     Immobilization,
+    Repetition,
     NoCapture,
     Timeout,
     Trap,
@@ -118,6 +119,7 @@ impl Reason {
             Reason::Den => "den",
             Reason::Elimination => "elimination",
             Reason::Immobilization => "immobilization",
+            Reason::Repetition => "repetition",
             Reason::NoCapture => "no-capture",
             Reason::Timeout => "timeout",
             Reason::Trap => "trap",
@@ -131,6 +133,7 @@ impl Reason {
             "den" => Reason::Den,
             "elimination" => Reason::Elimination,
             "immobilization" => Reason::Immobilization,
+            "repetition" => Reason::Repetition,
             "no-capture" => Reason::NoCapture,
             "timeout" => Reason::Timeout,
             "trap" => Reason::Trap,

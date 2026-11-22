@@ -37,9 +37,9 @@ const GAME_VERSION: &str = "1.0.0";
 #[cfg(not(feature = "older"))]
 const GAME_VERSION: &str = "1.1.0";
 
-const RULES_ID: &str = "desktop-jungle-v1";
+const RULES_ID: &str = "desktop-jungle-v2";
 #[cfg(not(feature = "broken-digest"))]
-const RULES_DIGEST: &str = "a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63";
+const RULES_DIGEST: &str = "a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57";
 #[cfg(feature = "broken-digest")]
 const RULES_DIGEST: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 

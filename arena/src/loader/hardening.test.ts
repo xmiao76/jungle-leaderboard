@@ -54,7 +54,7 @@ describe('extractContract never renders a non-canonical form as canonical', () =
 
 describe('metadata identity', () => {
   it('compares the rules identity on raw strings, before sanitizing', () => {
-    const check = checkMetadata({ ...METADATA, rulesId: 'desktop-jungle-v1\u0000' });
+    const check = checkMetadata({ ...METADATA, rulesId: `${METADATA.rulesId}\u0000` });
     expect(check.rulesCompatible).toBe(false);
     expect(check.issues.join()).toMatch(/Rules ID/);
   });

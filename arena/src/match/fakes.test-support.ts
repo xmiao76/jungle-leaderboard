@@ -5,7 +5,7 @@
  */
 import { FRAME_BYTES, FRAME_HEIGHT, FRAME_WIDTH } from '../loader/limits';
 import type { RefereeReply, RefereeRequest, Seat, SeatReply, SeatRequest } from '../protocol/messages';
-import { applyMove, forfeit, initialSnapshot, legalMoves } from '../referee';
+import { applyMove, forfeit, initialSnapshot, legalMoves, RULES_DIGEST, RULES_ID } from '../referee';
 import type { Metadata, PlyMove, Snapshot } from '../referee/types';
 import type { Clock, WorkerLike } from '../workers/rpc';
 
@@ -17,8 +17,8 @@ export const METADATA: Metadata = {
   githubUrl: 'https://github.com/example/jungle',
   engineVersion: 'fake',
   runtime: 'vitest',
-  rulesId: 'desktop-jungle-v1',
-  rulesDigest: 'a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63',
+  rulesId: RULES_ID,
+  rulesDigest: RULES_DIGEST,
 };
 
 export class ManualClock implements Clock {

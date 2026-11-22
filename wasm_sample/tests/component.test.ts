@@ -21,7 +21,7 @@ import {
   type WireSnapshot,
 } from './support';
 
-const DIGEST = 'a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63';
+const DIGEST = 'a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57';
 const same = (a: Uint8Array, b: Uint8Array) => Buffer.from(a).equals(Buffer.from(b));
 const cells = (b: object) => b as Record<string, string>;
 
@@ -50,7 +50,7 @@ describe('release binary', () => {
 
   it('reports its identity and the contractual rules', () => {
     const info = release.game.info();
-    expect(info).toMatchObject({ title: 'Jungle — Claude-Opus-5.5 sample', gameVersion: '1.0.0', model: 'Claude-Opus-5.5', codeAgent: 'ClaudeCode', githubUrl: 'https://github.com/xmiao76/jungle-leaderboard', rulesId: 'desktop-jungle-v1', rulesDigest: DIGEST });
+    expect(info).toMatchObject({ title: 'Jungle — Claude-Opus-5.5 sample', gameVersion: '1.1.0', model: 'Claude-Opus-5.5', codeAgent: 'ClaudeCode', githubUrl: 'https://github.com/xmiao76/jungle-leaderboard', rulesId: 'desktop-jungle-v2', rulesDigest: DIGEST });
     expect(JSON.parse(web.identity_json())).toEqual(info);
   });
 
@@ -149,11 +149,14 @@ describe('cross-build parity (standalone web build vs release component)', () =>
 
   it('agrees on applied moves, next player, counters and outcomes', () => {
     for (const row of adjudication) {
-      const s = sparse(cells(row.board), 'red', row.quietBefore);
-      const viaComponent = testBuild.rules!.apply(s, { src: row.move[0]!, dst: row.move[1]! })!;
-      const viaWeb = web.apply_to(encode(s), row.move[0]!, row.move[1]!);
+      // A row commits one `move`, or several `moves` in order (Red first, alternating sides).
+      const plies = ('moves' in row ? row.moves : [row.move]) as number[][];
+      const start = sparse(cells(row.board), 'red', row.quietBefore);
+      const viaComponent = plies.reduce((s, [src, dst]) => testBuild.rules!.apply(s, { src: src!, dst: dst! })!, start);
+      const viaWeb = plies.reduce((bytes, [src, dst]) => web.apply_to(bytes, src!, dst!), encode(start));
       expect(same(encode(viaComponent), viaWeb), row.name).toBe(true);
-      expect(viaComponent).toMatchObject({ status: row.status, reason: row.reason, noCapturePlies: row.quietAfter, toPlay: 'blue' });
+      const toPlay = plies.length % 2 === 1 ? 'blue' : 'red';
+      expect(viaComponent).toMatchObject({ status: row.status, reason: row.reason, noCapturePlies: row.quietAfter, toPlay });
     }
     // An illegal move is refused by both.
     expect(testBuild.rules!.apply(opening('red'), { src: 42, dst: 44 })).toBeUndefined();

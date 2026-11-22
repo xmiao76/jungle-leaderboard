@@ -10,6 +10,7 @@ import {
   initialSnapshot,
   isLegal,
   legalMoves,
+  positionOccurrences,
   sparseSnapshot,
 } from './index';
 import type { PlyMove, Snapshot } from './types';
@@ -76,19 +77,65 @@ describe('opening handshake', () => {
 });
 
 describe('adjudication', () => {
+  // A row commits one `move`, or several `moves` in order, Red first, alternating sides.
+  const plies = (c: { move?: readonly number[]; moves?: readonly (readonly number[])[] }) => (c.moves ?? [c.move!]).map(move);
+
   it.each(adjudication.map((c) => [c.name, c] as const))('%s', (_name, c) => {
     const before = sparseSnapshot(board(c.board), { toPlay: 'red', noCapturePlies: c.quietBefore });
-    const after = applyMove(before, move(c.move));
+    const sequence = plies(c);
+    const after = sequence.reduce(applyMove, before);
     expect(after.noCapturePlies).toBe(c.quietAfter);
     expect(after.status).toBe(c.status);
     expect(after.winner).toBe(c.winner);
     expect(after.reason).toBe(c.reason);
-    expect(after.rev).toBe(before.rev + 1);
-    expect(after.history).toHaveLength(before.history.length + 1);
-    expect(after.board[c.move[1]!]).toEqual(before.board[c.move[0]!]);
-    expect(after.board[c.move[0]!]).toBeNull();
+    expect(after.rev).toBe(before.rev + sequence.length);
+    expect(after.history).toHaveLength(before.history.length + sequence.length);
+    const last = sequence.at(-1)!;
+    expect(after.board[last.dst]).not.toBeNull();
+    expect(after.board[last.src]).toBeNull();
     // to-play flips on every committed legal move, terminal ones included.
-    expect(after.toPlay).toBe('blue');
+    expect(after.toPlay).toBe(sequence.length % 2 === 1 ? 'blue' : 'red');
+  });
+});
+
+describe('repetition', () => {
+  const LOOP = [move([42, 43]), move([6, 5]), move([43, 42]), move([5, 6])];
+  const start = (noCapturePlies = 0) => sparseSnapshot({ '42': 'red:cat', '6': 'blue:dog' }, { toPlay: 'red', noCapturePlies });
+
+  it('counts how often the current position has occurred, from the history alone', () => {
+    const counts = [...LOOP, ...LOOP].reduce<{ s: Snapshot; seen: number[] }>(
+      ({ s, seen }, m) => {
+        const next = applyMove(s, m);
+        return { s: next, seen: [...seen, positionOccurrences(next.board, next.history, next.noCapturePlies)] };
+      },
+      { s: start(), seen: [] },
+    ).seen;
+    // The start position (Red to move) recurs after plies 4 and 8; the others after ply 4 + their own.
+    expect(counts).toEqual([1, 1, 1, 2, 2, 2, 2, 3]);
+  });
+
+  it('draws at the third occurrence, ahead of the no-capture limit', () => {
+    const drawn = [...LOOP, ...LOOP].reduce(applyMove, start(92));
+    expect(drawn).toMatchObject({ status: 'drawn', winner: null, reason: 'repetition', noCapturePlies: 100, rev: 8, toPlay: 'red' });
+  });
+
+  it('never counts positions from before a capture', () => {
+    // Red's wolf takes Blue's cat, then both sides shuffle: the capture starts a new count.
+    const s0 = sparseSnapshot({ '42': 'red:wolf', '43': 'blue:cat', '6': 'blue:dog' }, { toPlay: 'red' });
+    const afterCapture = applyMove(s0, move([42, 43]));
+    expect(afterCapture.noCapturePlies).toBe(0);
+    expect(positionOccurrences(afterCapture.board, afterCapture.history, afterCapture.noCapturePlies)).toBe(1);
+  });
+
+  it('only matches positions with the same side to move', () => {
+    // After 42→43, 6→5, 43→42 the board equals no earlier board with Blue to move.
+    const s = [LOOP[0]!, LOOP[1]!, LOOP[2]!].reduce(applyMove, start());
+    expect(positionOccurrences(s.board, s.history, s.noCapturePlies)).toBe(1);
+  });
+
+  it('plays on from the opening: a full game never repeats without both sides shuffling', () => {
+    const s = applyMove(initialSnapshot('red'), legalMoves(initialSnapshot('red'))[0]!);
+    expect(positionOccurrences(s.board, s.history, s.noCapturePlies)).toBe(1);
   });
 });
 

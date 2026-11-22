@@ -16,6 +16,7 @@ const REASONS: Record<string, string> = {
   den: 'reached the enemy den',
   elimination: 'captured every enemy piece',
   immobilization: 'left the opponent without a legal move',
+  repetition: 'the same position occurred for the third time',
   'no-capture': '100 plies passed without a capture',
 };
 
@@ -83,7 +84,7 @@ function startWorker(): Promise<Worker> {
 }
 
 async function loadRelease(): Promise<Release> {
-  const fallback = { ...JSON.parse(identity_json()), file: 'jungle-opus55-1.0.0.wasm', sha256: '', size: 0 } as Release;
+  const fallback = { ...JSON.parse(identity_json()), file: 'jungle-opus55-1.1.0.wasm', sha256: '', size: 0 } as Release;
   try {
     const response = await fetch('release/release.json', { cache: 'no-cache' });
     return response.ok ? ((await response.json()) as Release) : fallback;

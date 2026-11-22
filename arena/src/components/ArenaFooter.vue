@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { leaderboardUrl, sdkUrl } from '../app/paths';
+import { RULES_ID } from '../referee';
 
 const LINK = 'text-muted underline decoration-line-strong underline-offset-2 hover:text-accent';
 </script>
@@ -11,7 +12,7 @@ const LINK = 'text-muted underline decoration-line-strong underline-offset-2 hov
       <a :href="leaderboardUrl()" :class="LINK">Jungle Leaderboard</a>. Source:
       <a href="https://github.com/xmiao76/jungle-leaderboard" target="_blank" rel="noopener noreferrer" :class="LINK">github.com/xmiao76/jungle-leaderboard</a>.
       Contract: <a :href="sdkUrl('jungle.wit')" :class="LINK">jungle.wit</a> ·
-      <a :href="sdkUrl('desktop-jungle-v1.json')" :class="LINK">rules profile</a>.
+      <a :href="sdkUrl(`${RULES_ID}.json`)" :class="LINK">rules profile</a>.
     </p>
   </footer>
 </template>

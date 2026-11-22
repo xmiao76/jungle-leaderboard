@@ -138,7 +138,11 @@ The Arena was built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in
 Publishing visitors' uploads to the shared catalog, after a full functional test, is planned in
 [`docs/PLAN-shared-catalog.md`](docs/PLAN-shared-catalog.md).
 
-Current public entry: the **Jungle — Claude-Opus-5.5 sample** 1.0.0, built in
+The Arena referees the `desktop-jungle-v2` rules (`sdk/rules/`): the v1 rulebook plus a **draw by
+repetition** when a move produces the same position (all squares and the side to move) for the third
+time. Programs built for v1 are refused at upload, and older catalog rows are no longer listed.
+
+Current public entry: the **Jungle — Claude-Opus-5.5 sample** 1.1.0, built in
 [`wasm_sample/`](wasm_sample/) (animal art: Twemoji, CC-BY 4.0); its hash and size are in
 `seed/catalog/seed.json`, and it is the reference program conformance runs play against.
 

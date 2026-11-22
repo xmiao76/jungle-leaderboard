@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import type { PlyRecord } from '../match/controller';
 import { METADATA } from '../match/fakes.test-support';
-import { applyMove, initialSnapshot, legalMoves } from '../referee';
+import { applyMove, initialSnapshot, legalMoves, RULES_DIGEST, RULES_ID } from '../referee';
 import type { Snapshot } from '../referee/types';
 import { MemoryStore, openArenaStore, ResilientStore, type ArenaStore } from '../storage/db';
 import { REPLAY_FORMAT, replaySnapshots, validateReplay, withPly, withResult, type ReplayV1 } from './schema';
@@ -14,7 +14,7 @@ function baseReplay(): ReplayV1 {
     id: 'r1',
     createdAt: '2026-11-20T00:00:00.000Z',
     arena: { version: 'test', loaderVersion: 'test' },
-    rules: { id: 'desktop-jungle-v1', digest: 'a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63' },
+    rules: { id: RULES_ID, digest: RULES_DIGEST },
     seats: {
       left: { sha256: 'a'.repeat(64), size: 1, metadata: METADATA, side: 'red' },
       right: { sha256: 'b'.repeat(64), size: 1, metadata: METADATA, side: 'blue' },
@@ -52,11 +52,14 @@ function played(n: number): { replay: ReplayV1; final: Snapshot } {
 
 describe('replay format', () => {
   it('rebuilds every official snapshot from the recorded decisions', () => {
+    // Both sides always play their first legal move, so they shuffle back and forth: the game
+    // ends in a draw by repetition at ply 11, and the replay reproduces that ending too.
     const { replay, final } = played(12);
+    expect(final).toMatchObject({ rev: 11, status: 'drawn', reason: 'repetition' });
     const snapshots = replaySnapshots(replay);
-    expect(snapshots).toHaveLength(13);
-    expect(snapshots[12]).toEqual(final);
-    expect(snapshots.map((s) => s.rev)).toEqual(Array.from({ length: 13 }, (_, i) => i));
+    expect(snapshots).toHaveLength(12);
+    expect(snapshots[11]).toEqual(final);
+    expect(snapshots.map((s) => s.rev)).toEqual(Array.from({ length: 12 }, (_, i) => i));
   });
 
   it('adds the forfeit revision without adding a ply', () => {

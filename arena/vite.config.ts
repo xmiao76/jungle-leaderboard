@@ -9,7 +9,7 @@ const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 /** SDK documents published next to the Arena: the WIT, the rules profile and the fixtures. */
 const SDK_FILES: Record<string, string> = {
   'sdk/jungle.wit': here('../wit/jungle.wit'),
-  'sdk/desktop-jungle-v1.json': here('../sdk/rules/desktop-jungle-v1.json'),
+  'sdk/desktop-jungle-v2.json': here('../sdk/rules/desktop-jungle-v2.json'),
   'sdk/fixtures/moves.json': here('../sdk/fixtures/moves.json'),
   'sdk/fixtures/adjudication.json': here('../sdk/fixtures/adjudication.json'),
   'sdk/fixtures/opening.json': here('../sdk/fixtures/opening.json'),

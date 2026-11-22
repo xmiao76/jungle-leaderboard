@@ -6,9 +6,9 @@ Everything an entrant needs to build against the Arena, extracted verbatim from 
 | File | What it is |
 |---|---|
 | [`../wit/jungle.wit`](../wit/jungle.wit) | The contract: world `jungle:arena/competitor@1.0.0`. Implement it exactly. |
-| [`rules/desktop-jungle-v1.json`](rules/desktop-jungle-v1.json) | The canonical rules profile. Its SHA-256 **is** the rules digest: `a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63` (bytes as committed: UTF-8, LF, one final LF, no BOM). `npm run build` re-verifies it. |
+| [`rules/desktop-jungle-v2.json`](rules/desktop-jungle-v2.json) | The canonical rules profile (v1 plus the repetition draw: a position occurring for the third time draws). Its SHA-256 **is** the rules digest: `a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57` (bytes as committed: UTF-8, LF, one final LF, no BOM). `npm run build` re-verifies it. |
 | [`fixtures/moves.json`](fixtures/moves.json) | The 23 portable legality cases: `{ name, board, move: [src, dst], legal }`, Red to move. |
-| [`fixtures/adjudication.json`](fixtures/adjudication.json) | The 6 adjudication rows: board, Red move, quiet counter before/after, status/winner/reason. |
+| [`fixtures/adjudication.json`](fixtures/adjudication.json) | The 9 adjudication rows: board, Red move (or, for the 3 repetition rows, a list of `moves` alternating from Red), quiet counter before/after, status/winner/reason. |
 | [`fixtures/opening.json`](fixtures/opening.json) | The opening handshake: 24 moves a side, sorted-list anchors, the revision-1 state. |
 
 The deployed Arena serves the same files at `arena/sdk/`.
@@ -18,7 +18,7 @@ The deployed Arena serves the same files at `arena/sdk/`.
 - Be **one** WebAssembly Component (not a core module) whose only import is
   `jungle:arena/display@1.0.0` and whose only export is `jungle:arena/game@1.0.0`, with exactly the
   WIT's types. WASI or any other import is rejected — the host supplies nothing else.
-- `info()` works before `init()`, and reports `rules-id = desktop-jungle-v1` and the digest above.
+- `info()` works before `init()`, and reports `rules-id = desktop-jungle-v2` and the digest above. Entrants built for `desktop-jungle-v1` are refused.
   Its `github-url` is required: the game's public GitHub repository URL (`https://github.com/<owner>/<repo>`).
 - `choose-move` returns an index into **the list it was given** (sorted by `(src, dst)`). The node
   budget is a ceiling; count every visited position. Keep a legal fallback.
@@ -92,7 +92,7 @@ waits for both settled frames (or a bounded render error).
 {
   "format": "jungle-arena-replay", "version": 1, "id": "…", "createdAt": "ISO-8601",
   "arena": { "version": "1.0.0", "loaderVersion": "jco-transpile@0.24.0+loader-1" },
-  "rules": { "id": "desktop-jungle-v1", "digest": "a0936f1e…" },
+  "rules": { "id": "desktop-jungle-v2", "digest": "a457bbc0…" },
   "series": { "id": "…", "game": 1, "of": 2 },   // optional: which game of a two-game match
   "seats": { "left": { "sha256": "…", "size": 0, "metadata": {}, "side": "red" }, "right": { … } },
   "settings": { "firstSide": "red", "seed": 0, "difficulty": "medium", "nodeBudget": 20000,

@@ -44,7 +44,7 @@ export function checkMetadata(raw: unknown): MetadataCheck {
     clean[field] = text.slice(0, MAX_METADATA_CHARS);
   }
 
-  // Identity is compared on the raw strings: "desktop-jungle-v1\0" is not the rules ID.
+  // Identity is compared on the raw strings: "desktop-jungle-v2\0" is not the rules ID.
   const rulesCompatible = record['rulesId'] === RULES_ID && record['rulesDigest'] === RULES_DIGEST;
   if (record['rulesId'] !== RULES_ID) {
     issues.push(`Rules ID is "${clean['rulesId']}", expected "${RULES_ID}".`);

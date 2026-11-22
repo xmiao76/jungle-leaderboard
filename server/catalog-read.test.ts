@@ -38,6 +38,16 @@ describe('GET manifest.json', () => {
     ]);
   });
 
+  it('lists and serves only entrants built for the current rules', async () => {
+    await stored(sampleRow({ sha256: sha('a'), title: 'Current rules' }));
+    await stored(sampleRow({ sha256: sha('b'), title: 'Old rules', rules_id: 'desktop-jungle-v1', rules_digest: 'a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63' }));
+
+    const { manifest, issues } = parseManifest(await (await handleCatalogGet(local.env, 'manifest.json')).json());
+    expect(issues).toEqual([]);
+    expect(manifest?.entries.map((e) => e.metadata.title)).toEqual(['Current rules']);
+    expect((await handleCatalogGet(local.env, `${sha('b')}.wasm`)).status).toBe(404);
+  });
+
   it('answers 503 without internal details when the database fails, and logs the cause', async () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const broken = { ...local.env, DB: { prepare: () => { throw new Error('D1_ERROR: secret internals'); } } } as unknown as Env;

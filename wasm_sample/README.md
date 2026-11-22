@@ -1,7 +1,7 @@
 # Jungle — a Claude-Opus-5.5 sample game
 
 A standalone, playable **Jungle (Dou Shou Qi, 斗兽棋)** web game whose release build also produces a
-single-file **Arena entrant**, `jungle-opus55-1.0.0.wasm`: the same strategy, rules and artwork as a
+single-file **Arena entrant**, `jungle-opus55-1.1.0.wasm`: the same strategy, rules and artwork as a
 self-contained WebAssembly Component for the [Jungle Arena](https://jungle-leaderboard.pages.dev/arena/).
 
 Built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in [`jungle_prompt.md`](jungle_prompt.md).
@@ -9,12 +9,12 @@ Built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in [`jungle_prom
 | | |
 |---|---|
 | Live game | <https://jungle-wasm-sample.pages.dev> *(published by `npm run deploy`; see Release below)* |
-| Arena entrant | `jungle-opus55-1.0.0.wasm` — 121,655 bytes |
-| SHA-256 | `d21e646924498b29a72ffb9ef06b5bfb2f39f174166cdfe1d3db40b992ae78f9` |
+| Arena entrant | `jungle-opus55-1.1.0.wasm` — 134,255 bytes |
+| SHA-256 | `8842387f3251a950d8081bb713cfb0876e243648583784e563d9e637c6db50e8` |
 | GitHub | <https://github.com/xmiao76/jungle-leaderboard> (also reported by `info()` as `github-url`) |
 | World | `jungle:arena/competitor@1.0.0` — imports only `jungle:arena/display@1.0.0` |
-| Rules | `desktop-jungle-v1`, digest `a0936f1eee833dd11107ed581dc7c5c2f72f0612d9fc7055c93a1d2fbb0c3d63` |
-| Game / engine version | 1.0.0 / jungle-core 1.0.0 (alpha-beta, iterative deepening) |
+| Rules | `desktop-jungle-v2` (v1 plus the draw by repetition), digest `a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57` |
+| Game / engine version | 1.1.0 / jungle-core 1.1.0 (alpha-beta, iterative deepening, repetition-aware) |
 | Runtime | Rust 1.94.1, `wasm32-unknown-unknown`, wit-bindgen 0.63.0 |
 
 ## Playing
@@ -39,7 +39,7 @@ unless a rat is in the way, and an enemy trap reduces a piece to rank zero.
 
 ## Importing into the Arena
 
-1. In the game, use **Download Arena .wasm** (or take `dist/jungle-opus55-1.0.0.wasm`). It is the only
+1. In the game, use **Download Arena .wasm** (or take `dist/jungle-opus55-1.1.0.wasm`). It is the only
    file the Arena needs.
 2. In the [Jungle Arena](https://jungle-leaderboard.pages.dev/arena/), choose **Import .wasm**. It is
    validated, saved on your device, and immediately usable in either seat. It is also in the Arena's
@@ -96,14 +96,14 @@ npm run build:all      # one command: assets → components → wasm-pack → re
 npm run dev            # dev server for the standalone game at http://localhost:5180
 ```
 
-`build:all` writes `dist/jungle-opus55-1.0.0.wasm` (release), `dist/test/jungle-opus55-test.wasm`
+`build:all` writes `dist/jungle-opus55-1.1.0.wasm` (release), `dist/test/jungle-opus55-test.wasm`
 (test-exports build), `dist/jungle-fixture-1.0.0.wasm`, and the static site in `web/dist/`.
 Artwork changes: `npm run assets` (verifies pinned downloads, rebuilds the atlas).
 
 Inspect the artifact:
 
 ```bash
-sha256sum dist/jungle-opus55-1.0.0.wasm
+sha256sum dist/jungle-opus55-1.1.0.wasm
 cat web/public/release/embedded.wit     # the WIT embedded in the binary (via jco-transpile componentWit)
 cat web/public/release/release.json     # identity, hash and imports
 ```
@@ -138,10 +138,19 @@ Cold load of the production bundle: about 0.2 s locally. Raw numbers: `docs/evid
 engine). Firefox could not be launched on the build machine (missing Visual C++ runtime) and real
 Safari is not available on Windows; both are recorded as unverified.
 
+**1.1.0 (2026-11-22): rules `desktop-jungle-v2`.** A position occurring for the third time is a draw.
+The rules count positions from the snapshot history (stepping the quiet moves since the last capture
+back), and the search scores a line as a draw when it would make a third occurrence or returns to a
+position already reached in that search, so the engine avoids repeating when ahead and seeks it when
+behind. Head-to-head against 1.0.0 under the v2 referee (hard, 20,000 nodes, 6 seeds, colours
+swapped per pair): 5 wins, 5 losses, 2 draws, a score of 6/12. The side moving first usually won, so
+the versions are even; 12 games cannot resolve a small difference (95% interval about 50% ± 28%). One
+game was decided by the new rule: 1.1.0, losing as Blue, drew by repetition.
+
 The game was also run through the Arena's own conformance runner (`npm run conformance` in the parent
-repository): it passes admission and every behavioural check, and its three conformance matches (as
-Red, as Blue and against itself, since it is now the only public catalog program) are draws by the
-100-ply no-capture rule. Against the Arena's test entrant, which always plays the first legal move, it
+repository): 1.1.0 passes admission and every behavioural check, and its three conformance matches (as
+Red, as Blue and against itself, since it is the only public catalog program) are still draws by the
+100-ply no-capture rule: the engine keeps moving rather than repeating. Against the Arena's test entrant, which always plays the first legal move, it
 wins by reaching the den as Red (35 plies) and as Blue (38 plies).
 
 ## Release

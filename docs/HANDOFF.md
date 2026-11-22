@@ -116,7 +116,7 @@ npm run conformance -- path/to/entrant.wasm
    - a 1-second Hard move deadline in the standalone game (brief changed from 2 s; **implemented
      2026-11-22** — deadline-aware search in `jungle-core`, deadline set by the web session);
    - a committed `release/index.html` that works from `file://` (there is no `wasm_sample/release/` today);
-   - `rules/desktop-jungle-v1.json` with a build-time digest check (the sample keeps rules under `spec/rules/`);
+   - `rules/desktop-jungle-v2.json` (v1 until 2026-11-22) with a build-time digest check (the sample keeps rules under `spec/rules/`);
    - admission-checklist tests and a strength report.
 
    Check each one, then deploy with `cd wasm_sample && npm run deploy` once the user approves.
