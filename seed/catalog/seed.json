@@ -3,11 +3,11 @@
   "version": 1,
   "entries": [
     {
-      "sha256": "86ce6cdeb127a258f32d0080386d958343d9d003f850ed3c1ad10a20eeb2121d",
-      "size": 134493,
-      "file": "jungle-claude-opus-5-5-sample-1-1-0-86ce6cde.wasm",
+      "sha256": "0656b02d0ffdee0ceba5053053ef47ea6a3723cabcfcffa792154b81d7447963",
+      "size": 134476,
+      "file": "claude-opus-5-5-claudecode-1-1-0-0656b02d.wasm",
       "metadata": {
-        "title": "Jungle — Claude-Opus-5.5 sample",
+        "title": "Claude-Opus-5.5 · ClaudeCode",
         "gameVersion": "1.1.0",
         "model": "Claude-Opus-5.5",
         "codeAgent": "ClaudeCode",

@@ -1,11 +1,11 @@
 // Inspect a built entrant: hash, size, embedded WIT, imports/exports, and info().
-//   node scripts/inspect.mjs [dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm]
+//   node scripts/inspect.mjs [dist/claude-opus-5-5-claudecode-1.1.0.wasm]
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { transpileBytes } from '@bytecodealliance/jco-transpile';
 import { componentWit } from '@bytecodealliance/jco-transpile/wasm-tools';
 
-const file = process.argv[2] ?? 'dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm';
+const file = process.argv[2] ?? 'dist/claude-opus-5-5-claudecode-1.1.0.wasm';
 const bytes = new Uint8Array(readFileSync(file));
 console.log(`file     ${file}`);
 console.log(`size     ${bytes.length} bytes`);

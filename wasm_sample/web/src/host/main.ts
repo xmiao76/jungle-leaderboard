@@ -195,7 +195,7 @@ async function run(releaseBytes: Uint8Array, source: string): Promise<void> {
   }
 }
 
-$('run').addEventListener('click', async () => run(await fetchBytes('../jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm'), 'published site'));
+$('run').addEventListener('click', async () => run(await fetchBytes('../claude-opus-5-5-claudecode-1.1.0.wasm'), 'published site'));
 $('file').addEventListener('change', async () => {
   const file = ($('file') as HTMLInputElement).files?.[0];
   if (file) await run(new Uint8Array(await file.arrayBuffer()), file.name);

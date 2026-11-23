@@ -50,7 +50,7 @@ describe('release binary', () => {
 
   it('reports its identity and the contractual rules', () => {
     const info = release.game.info();
-    expect(info).toMatchObject({ title: 'Jungle — Claude-Opus-5.5 sample', gameVersion: '1.1.0', model: 'Claude-Opus-5.5', codeAgent: 'ClaudeCode', modelPlatform: 'official', githubUrl: 'https://github.com/xmiao76/jungle-leaderboard', rulesId: 'desktop-jungle-v2', rulesDigest: DIGEST });
+    expect(info).toMatchObject({ title: 'Claude-Opus-5.5 · ClaudeCode', gameVersion: '1.1.0', model: 'Claude-Opus-5.5', codeAgent: 'ClaudeCode', modelPlatform: 'official', githubUrl: 'https://github.com/xmiao76/jungle-leaderboard', rulesId: 'desktop-jungle-v2', rulesDigest: DIGEST });
     expect(JSON.parse(web.identity_json())).toEqual(info);
   });
 

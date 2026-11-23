@@ -1,7 +1,7 @@
 # Jungle — a Claude-Opus-5.5 sample game
 
 A standalone, playable **Jungle (Dou Shou Qi, 斗兽棋)** web game whose release build also produces a
-single-file **Arena entrant**, `jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm`: the same strategy, rules and artwork as a
+single-file **Arena entrant**, `claude-opus-5-5-claudecode-1.1.0.wasm`: the same strategy, rules and artwork as a
 self-contained WebAssembly Component for the [Jungle Arena](https://jungle-leaderboard.pages.dev/arena/).
 
 Built by **Claude-Opus-5.5** with **ClaudeCode** on the **official** model platform, from the brief in [`jungle_prompt.md`](jungle_prompt.md).
@@ -9,7 +9,7 @@ Built by **Claude-Opus-5.5** with **ClaudeCode** on the **official** model platf
 | | |
 |---|---|
 | Live game | <https://jungle-wasm-sample.pages.dev> *(published by `npm run deploy`; see Release below)* |
-| Arena entrant | `jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm` — 134,493 bytes |
+| Arena entrant | `claude-opus-5-5-claudecode-1.1.0.wasm` — 134,476 bytes |
 | SHA-256 | `8842387f3251a950d8081bb713cfb0876e243648583784e563d9e637c6db50e8` |
 | GitHub | <https://github.com/xmiao76/jungle-leaderboard> (also reported by `info()` as `github-url`) |
 | World | `jungle:arena/competitor@1.0.0` — imports only `jungle:arena/display@1.0.0` |
@@ -39,11 +39,11 @@ unless a rat is in the way, and an enemy trap reduces a piece to rank zero.
 
 ## Importing into the Arena
 
-1. In the game, use **Download Arena .wasm** (or take `dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm`). It is the only
+1. In the game, use **Download Arena .wasm** (or take `dist/claude-opus-5-5-claudecode-1.1.0.wasm`). It is the only
    file the Arena needs.
 2. In the [Jungle Arena](https://jungle-leaderboard.pages.dev/arena/), choose **Import .wasm**. It is
    validated, saved on your device, and immediately usable in either seat. It is also in the Arena's
-   public catalog as *Jungle — Claude-Opus-5.5 sample 1.0.0*.
+   public catalog as *Claude-Opus-5.5 · ClaudeCode* (the sample game).
 
 Published next to the binary: [`release/release.json`](web/public/release/release.json) (identity,
 hash, imports), the [WIT contract](wit/jungle.wit), the WIT embedded in the binary
@@ -96,14 +96,14 @@ npm run build:all      # one command: assets → components → wasm-pack → re
 npm run dev            # dev server for the standalone game at http://localhost:5180
 ```
 
-`build:all` writes `dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm` (release), `dist/test/jungle-opus55-test.wasm`
+`build:all` writes `dist/claude-opus-5-5-claudecode-1.1.0.wasm` (release), `dist/test/jungle-opus55-test.wasm`
 (test-exports build), `dist/jungle-fixture-1.0.0.wasm`, and the static site in `web/dist/`.
 Artwork changes: `npm run assets` (verifies pinned downloads, rebuilds the atlas).
 
 Inspect the artifact:
 
 ```bash
-sha256sum dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm
+sha256sum dist/claude-opus-5-5-claudecode-1.1.0.wasm
 cat web/public/release/embedded.wit     # the WIT embedded in the binary (via jco-transpile componentWit)
 cat web/public/release/release.json     # identity, hash and imports
 ```

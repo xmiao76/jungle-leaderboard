@@ -96,7 +96,7 @@ export function canvasFingerprint(page: Page, testId: string): Promise<string> {
 }
 
 /** The real game in the public catalog, and the small test-only entrant from arena/test-fixtures. */
-export const SAMPLE = 'Jungle — Claude-Opus-5.5 sample';
+export const SAMPLE = 'Claude-Opus-5.5 · ClaudeCode';
 export const TEST_ENTRANT = 'Arena test entrant';
 
 /** Upload the test entrant through the upload page into a seat; ends on the Arena setup page. */

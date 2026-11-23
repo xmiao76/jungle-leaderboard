@@ -6,8 +6,11 @@
  *   Turnstile → report quota → size and shape → standard settings → both programs published under
  *   the current rules and different → each game replayed from the opening (verify-game.ts) →
  *   one report per match → rating update in one D1 batch (a transaction).
- * A match with a forfeit (unverifiable from moves) or between two programs from one uploader is
- * recorded as `unrated`. Concurrent reports for one program collide on rating_changes
+ * A match with a forfeit (unverifiable from moves) is recorded as `unrated`. (Matches between
+ * two programs from one uploader DO count: the catalog's curator uploads most programs, so
+ * excluding them would leave almost nothing rated; abuse is bounded by move verification,
+ * quotas, one report per match, and maintainer audit/void instead.) Concurrent reports for
+ * one program collide on rating_changes
  * (sha256, seq) and retry, so ratings always equal a sequential application.
  */
 import { isRatedSettings } from '../arena/src/match/rated';
@@ -38,7 +41,6 @@ interface Standing {
   readonly sha256: string;
   readonly rating: number;
   readonly rating_seq: number;
-  readonly uploader: string | null;
 }
 
 interface MatchRow {
@@ -52,7 +54,7 @@ interface MatchRow {
 
 const reject = (status: number, reasons: readonly string[]) => Response.json({ stage: 'server', reasons }, { status });
 
-const LOAD_PLAYABLE = `SELECT sha256, rating, rating_seq, uploader FROM entrants WHERE sha256 IN (?, ?) AND status = 'listed' AND rules_id = ? AND rules_digest = ?`;
+const LOAD_PLAYABLE = `SELECT sha256, rating, rating_seq FROM entrants WHERE sha256 IN (?, ?) AND status = 'listed' AND rules_id = ? AND rules_digest = ?`;
 const MATCH_BY_KEY = "FROM matches WHERE sha_lo = ? AND sha_hi = ? AND seed = ? AND first_side = ? AND status <> 'voided'";
 const FIND_MATCH = `SELECT id, status, moves, left_wins, right_wins, draws ${MATCH_BY_KEY}`;
 const INSERT_MATCH = [
@@ -82,10 +84,8 @@ async function admit(env: MatchReportEnv, report: MatchReport): Promise<{ status
   return { standings, score: scoreMatch(report) };
 }
 
-function unratedReason(score: MatchScore, standings: Map<string, Standing>, report: MatchReport): string | null {
+function unratedReason(score: MatchScore): string | null {
   if (score.hasForfeit) return 'A game ended by forfeit, which the server cannot verify from the moves.';
-  const [l, r] = [standings.get(report.left)!.uploader, standings.get(report.right)!.uploader];
-  if (l !== null && l === r) return 'Both programs were uploaded by the same uploader.';
   return null;
 }
 
@@ -173,7 +173,7 @@ export async function handleMatchReport(env: MatchReportEnv, request: Request, d
     if ('reasons' in parsed) return reject(400, parsed.reasons);
     const admitted = await admit(env, parsed.report);
     if ('reasons' in admitted) return reject(admitted.status, admitted.reasons);
-    return await record(env, parsed.report, admitted.score, reporter, unratedReason(admitted.score, admitted.standings, parsed.report), now);
+    return await record(env, parsed.report, admitted.score, reporter, unratedReason(admitted.score), now);
   } catch (err) {
     console.error('match report failed', err);
     return reject(503, ['The match could not be recorded right now; nothing was stored.']);

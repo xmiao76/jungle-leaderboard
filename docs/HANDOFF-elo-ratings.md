@@ -126,7 +126,13 @@ filename convention). The contract check dual-accepts the pre-field 9-field meta
 (`LEGACY_METADATA_SIGNATURES` in `arena/src/loader/contract.ts`; regression binary
 `arena/test-fixtures/legacy-metadata.wasm`), and `checkMetadata` normalizes absent → `''`,
 displayed as nothing. Fixtures rebuilt (new hashes), sample rebuilt and re-seeded as reference
-(`86ce6cde…`, `modelPlatform: "official"`).
+(`86ce6cde…`, `modelPlatform: "official"`). Naming was then simplified in `jungle_prompt.md`
+and applied to the sample: title is now `<model> · <code-agent>` (platform appended only when
+non-empty and not `official`; no `Jungle` prefix), the release file is
+`claude-opus-5-5-claudecode-1.1.0.wasm`, title `Claude-Opus-5.5 · ClaudeCode`, re-seeded as
+reference (`0656b02d…`). A `program:remove` maintainer script also landed (list/remove/hide).
+The same-uploader unrated rule was then removed (curator uploads most programs — see the
+amendment in `PLAN-elo-ratings.md`); forfeit is now the only `unrated` reason.
 
 ## How to run things
 

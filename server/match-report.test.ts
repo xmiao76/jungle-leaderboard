@@ -148,11 +148,14 @@ describe('POST /api/matches', () => {
     expect(await rows('SELECT status, unrated_reason FROM matches')).toEqual([{ status: 'unrated', unrated_reason: expect.stringMatching(/forfeit/) }]);
   });
 
-  it('records two programs from one uploader as unrated', async () => {
+  it('counts a match between two programs from one uploader (the curator uploads most programs)', async () => {
     await local.env.DB.prepare("UPDATE entrants SET uploader = 'u-a' WHERE sha256 = ?").bind(B).run();
     const response = await report(body());
-    expect(await response.json()).toMatchObject({ match: { status: 'unrated' }, ratings: null });
-    expect(await entrant(B)).toMatchObject({ rating: 1000, rated_matches: 0 });
+    expect(response.status).toBe(201);
+    const answer = (await response.json()) as { match: { status: string }; ratings: unknown };
+    expect(answer.match.status).toBe('counted');
+    expect(answer.ratings).not.toBeNull();
+    expect(await entrant(B)).toMatchObject({ rated_matches: 1 });
   });
 
   it('needs a Turnstile token and keeps to the daily limit', async () => {

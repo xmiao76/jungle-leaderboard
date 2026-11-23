@@ -48,8 +48,9 @@ equal and you gain 32. Anything else is a friendly match and is recorded nowhere
 
 **Trust.** Matches are played in visitors' browsers (the free server tier cannot run the programs)
 and reported as moves. The server replays both games move by move and stores nothing unless every
-check passes; a match containing a forfeit — unprovable from moves — or between two programs from
-the same uploader is recorded as *unrated*. A maintainer can re-run any recorded match for real
+check passes; a match containing a forfeit — unprovable from moves — is recorded as *unrated*, and
+every other rated match counts, including between two programs from the same uploader (the catalog's
+curator uploads most programs, so excluding those would leave almost nothing rated). A maintainer can re-run any recorded match for real
 (`npm run matches:audit`), void a forgery, and fold the ratings again (`npm run ratings:recompute`).
 
 ### Reading the standings
@@ -137,7 +138,7 @@ every seed file.
 **Rated and friendly matches.** The setup and play pages badge every pairing: *Rated* at the
 standard settings between two different published programs, *Friendly* otherwise. After a rated
 match the result dialog shows each program's rating change (e.g. `Elo 1000 → 1016 (+16)`); a forfeit
-or a same-uploader pairing is recorded as unrated and says so. Recorded matches - the two programs,
+is recorded as unrated and says so. Recorded matches - the two programs,
 each game's result and moves, the wins/losses/draws and the ratings before and after - live in the
 D1 `matches` table, which is what the leaderboard's standings fold from.
 
@@ -145,7 +146,7 @@ The Arena referees the `desktop-jungle-v2` rules (`sdk/rules/`): the v1 rulebook
 repetition** when a move produces the same position (all squares and the side to move) for the third
 time. Programs built for v1 are refused at upload, and older catalog rows are no longer listed.
 
-Current public entry: the **Jungle — Claude-Opus-5.5 sample** 1.1.0, built in
+Current public entry: **Claude-Opus-5.5 · ClaudeCode** 1.1.0 (the sample game), built in
 [`wasm_sample/`](wasm_sample/) (animal art: Twemoji, CC-BY 4.0); its hash and size are in
 `seed/catalog/seed.json`, and it is the reference program conformance runs play against.
 
@@ -361,7 +362,7 @@ npm run program:remove -- --local --sha <sha256> --hide
 npm run program:remove -- --local --sha <sha256> --unhide
 ```
 
-Notes on the sample: the one match record was `unrated` (same-uploader), so no recompute ran; had
+Notes on the sample: the one match record was `unrated` (a forfeit), so no recompute ran; had
 the program owned *counted* matches, the tool would re-fold the remaining ratings automatically
 after deleting. Hard delete is irreversible — the only way back is re-uploading the file, which
 publishes it fresh at 1000. Hiding a seed entry survives `db:seed`; hard-deleting one is refused

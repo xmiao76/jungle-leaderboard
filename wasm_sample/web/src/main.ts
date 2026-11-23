@@ -85,7 +85,7 @@ function startWorker(): Promise<Worker> {
 }
 
 async function loadRelease(): Promise<Release> {
-  const fallback = { ...JSON.parse(identity_json()), file: 'jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm', sha256: '', size: 0 } as Release;
+  const fallback = { ...JSON.parse(identity_json()), file: 'claude-opus-5-5-claudecode-1.1.0.wasm', sha256: '', size: 0 } as Release;
   try {
     const response = await fetch('release/release.json', { cache: 'no-cache' });
     return response.ok ? ((await response.json()) as Release) : fallback;

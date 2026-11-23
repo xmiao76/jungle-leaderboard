@@ -24,6 +24,13 @@ Decisions (user, 2026-11-22):
   5 s per move. Only rated matches are recorded.
 - **Trust = browser-reported + server checks** (Workers Free cannot run the programs).
 
+Amendment (2026-11-23): the same-uploader exclusion in "What gets rated" below was **removed**
+after first real use — the catalog's curator uploads most programs, so nearly every pairing was
+same-uploader and almost nothing counted. Same-uploader matches now count; forgery bounds are
+move verification, quotas, one report per match, and audit/void. Matches recorded `unrated`
+under the old rule can be retro-counted by flipping their status and running
+`ratings:recompute`.
+
 Constraints: Workers Free (10 ms CPU per Function request), R2 Paid; production D1/R2 not created
 yet (`wrangler.toml` placeholder + deploy guard).
 

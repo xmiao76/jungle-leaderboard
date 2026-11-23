@@ -119,7 +119,8 @@ runs both). Spec: `arena_prompt.md`. Protocol and replay format: `sdk/README.md`
   (`server/match-report.ts`), which replays them with the lean verifier (`server/verify-game.ts`,
   differential-tested against the real referee) before recording anything: Turnstile → 60/day
   quota → shape → rated settings → both published → verify → one report per (pair, seed, first
-  side) → one `db.batch`. A forfeit or a same-uploader pairing is stored `unrated`. Elo math is
+  side) → one `db.batch`. A forfeit is stored `unrated`; same-uploader pairings count (the
+  curator uploads most programs). Elo math is
   `server/elo.ts` (K = 32 per game, one update per match). Concurrent writers collide on
   `rating_changes(sha256, seq)` and retry — never renumber or delete those rows. Maintainer tools:
   `npm run ratings:recompute -- --local|--remote` (appends corrections; a healthy DB yields zero),

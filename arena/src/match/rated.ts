@@ -2,7 +2,7 @@
  * Which matches change Elo ratings. Shared by the Arena pages (the Rated/Friendly badge) and the
  * match-report API, so both apply one rule. No Vue or browser imports: the server bundles it.
  * Rated: two different programs published in the Arena catalog, at the standard settings.
- * The server adds what only it knows (same uploader, forfeits; see server/match-report.ts).
+ * The server adds what only it knows (forfeits are recorded unrated; see server/match-report.ts).
  */
 import type { Level } from '../referee/types';
 

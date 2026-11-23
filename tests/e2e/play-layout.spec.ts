@@ -87,7 +87,7 @@ test('labels above each board name the seat, side, program, version and model; t
   await openPausedMatch(page);
   const left = page.locator('article[data-seat="left"]');
   await expect(left).toHaveAttribute('aria-label', /Left seat · Red · Arena test entrant v1\.1\.0 · /);
-  await expect(page.getByTestId('pane-title-right')).toHaveText('Jungle — Claude-Opus-5.5 sample · v1.1.0');
+  await expect(page.getByTestId('pane-title-right')).toHaveText('Claude-Opus-5.5 · ClaudeCode · v1.1.0');
   await expect(page.getByTestId('side-right')).toHaveText(/Blue/);
   // The label sits directly above its board.
   const label = (await left.locator('header').boundingBox())!;
