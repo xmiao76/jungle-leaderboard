@@ -2,6 +2,9 @@
 
 Written 2026-11-22 for the next code agent. Facts here were checked on that date unless marked otherwise.
 
+> **Newer work in progress:** match results, Elo ratings and the live leaderboard. Start with
+> [`docs/HANDOFF-elo-ratings.md`](HANDOFF-elo-ratings.md); this file is background.
+
 ## Read these first
 
 | File | Why |

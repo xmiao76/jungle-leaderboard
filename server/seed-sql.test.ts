@@ -4,7 +4,7 @@ import type { PublicEntry } from '../arena/src/catalog/catalog';
 import { RULES_DIGEST, RULES_ID } from '../arena/src/referee/profile';
 import { listPublicEntries } from './catalog-read';
 import { startLocalEnv, type LocalEnv } from './local-env.test-support';
-import { seedSql, sqlText } from './seed-sql';
+import { seedSql, sqlText, upsertSql } from './seed-sql';
 import { sha } from './rows.test-support';
 
 function entry(overrides: Partial<PublicEntry> = {}): PublicEntry {
@@ -17,6 +17,7 @@ function entry(overrides: Partial<PublicEntry> = {}): PublicEntry {
       gameVersion: '1.0.0',
       model: 'Claude-Opus-5.5',
       codeAgent: 'ClaudeCode',
+      modelPlatform: 'official',
       githubUrl: 'https://github.com/xmiao76/jungle-leaderboard',
       engineVersion: 'alpha-beta; iterative deepening',
       runtime: 'Rust',
@@ -93,6 +94,18 @@ describe('seedSql', () => {
     await execute(seedSql([entry({ credits })]));
     const [listed] = await listPublicEntries(local.env.DB);
     expect(listed?.credits).toBe(credits);
+  });
+
+  it('upsertSql loads extra entries (e2e fixtures) without touching the reference', async () => {
+    await execute(seedSql([entry()]));
+    await execute(upsertSql([entry({ sha256: sha('b'), reference: false }), entry({ sha256: sha('c'), reference: false })]));
+    const { results } = await local.env.DB.prepare('SELECT sha256, is_reference FROM entrants ORDER BY sha256').all<{ sha256: string; is_reference: number }>();
+    expect(results).toEqual([
+      { sha256: sha('a'), is_reference: 1 },
+      { sha256: sha('b'), is_reference: 0 },
+      { sha256: sha('c'), is_reference: 0 },
+    ]);
+    expect(() => upsertSql([entry({ reference: true })])).toThrow(/reference/);
   });
 
   it('records where a seed entry came from in its report', async () => {

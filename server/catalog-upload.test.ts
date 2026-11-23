@@ -24,6 +24,7 @@ const METADATA = {
   gameVersion: '1.0.0',
   model: 'Model-X',
   codeAgent: 'Agent-Y',
+  modelPlatform: 'official',
   githubUrl: 'https://github.com/example/jungle',
   engineVersion: 'engine 1',
   runtime: 'Rust',
@@ -237,6 +238,18 @@ describe('POST /api/catalog', () => {
     const quota = await local.env.DB.prepare('SELECT count FROM upload_quota WHERE bucket = ?')
       .bind(quotaBucket(uploader, NOW)).first<{ count: number }>();
     expect(quota!.count).toBe(MAX_UPLOADS_PER_DAY);
+  });
+
+  it('uses UPLOAD_DAILY_LIMIT when it is configured (e2e raises it)', async () => {
+    const uploader = await hashUploader(SALT, IP);
+    await local.env.DB.prepare('INSERT INTO upload_quota (bucket, count) VALUES (?, ?)')
+      .bind(quotaBucket(uploader, NOW), MAX_UPLOADS_PER_DAY).run();
+    const raised = { ...env, UPLOAD_DAILY_LIMIT: String(MAX_UPLOADS_PER_DAY + 5) };
+    expect((await handleCatalogUpload(raised, uploadRequest(makeBody()), deps())).status).toBe(201);
+    const lowered = { ...env, UPLOAD_DAILY_LIMIT: '1' };
+    const refused = await handleCatalogUpload(lowered, uploadRequest(makeBody()), deps());
+    expect(refused.status).toBe(429);
+    expect(((await refused.json()) as { reasons: string[] }).reasons.join(' ')).toContain('daily limit of 1 uploads');
   });
 
   it('rejects a body over the size limit from its Content-Length, storing nothing', async () => {

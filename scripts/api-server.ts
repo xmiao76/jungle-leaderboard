@@ -3,7 +3,9 @@
 // (both are idempotent); --fresh first wipes the state directory, so tests and conformance runs
 // start from the seed catalog alone.
 //
-//   node --import tsx scripts/api-server.ts [--port 8788] [--state .wrangler/state] [--fresh]
+//   node --import tsx scripts/api-server.ts [--port 8788] [--state .wrangler/state] [--fresh] [--fixtures]
+//
+// --fixtures also publishes the e2e test programs (scripts/e2e-fixtures.ts); e2e only.
 //
 // The port is the last --port given, else ARENA_API_PORT, else 8788 (the Vite dev server's
 // /api proxy reads the same variable). If another program already uses the port, it stops at
@@ -14,7 +16,9 @@ import { createServer } from 'node:net';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CATALOG_FORMAT } from '../arena/src/catalog/catalog';
+import { TURNSTILE_TEST_SECRET } from '../server/abuse';
 import { seedCatalog } from './db-seed';
+import { seedFixtures } from './e2e-fixtures';
 import { migrate, ROOT, spawnWrangler } from './wrangler-run';
 
 export interface ApiServer {
@@ -102,7 +106,19 @@ function assertDisposable(stateDir: string): void {
   if (!isInside || inside.split(sep)[0] === 'tmp') throw new Error(`--fresh only wipes a folder inside .wrangler/, not ${stateDir}`);
 }
 
-export async function startApiServer(options: { port: number; stateDir: string; fresh: boolean }): Promise<ApiServer> {
+/**
+ * Local-only Function bindings: Turnstile's always-pass test secret (the server then skips the
+ * network call), a fixed salt, and daily limits high enough for a whole e2e run. Passed on the
+ * command line so CI, which has no .dev.vars, behaves like a developer machine.
+ */
+const LOCAL_BINDINGS = [
+  `TURNSTILE_SECRET=${TURNSTILE_TEST_SECRET}`,
+  'UPLOADER_SALT=local-development-salt',
+  'UPLOAD_DAILY_LIMIT=1000',
+  'REPORT_DAILY_LIMIT=1000',
+];
+
+export async function startApiServer(options: { port: number; stateDir: string; fresh: boolean; fixtures?: boolean }): Promise<ApiServer> {
   if (!existsSync(join(ROOT, 'dist', 'arena'))) throw new Error('dist/ is missing: run `npm run build` first.');
   // Check before the slow migrate and seed steps, so a busy port fails in about a second.
   await assertPortFree(options.port);
@@ -113,6 +129,7 @@ export async function startApiServer(options: { port: number; stateDir: string; 
   }
   await migrate(target);
   await seedCatalog(target);
+  if (options.fixtures) await seedFixtures(target);
   const origin = `http://127.0.0.1:${options.port}`;
   console.log(`api-server: starting the site and catalog API on ${origin}/ (this can take a few seconds)…`);
   const child = spawnWrangler([
@@ -123,6 +140,7 @@ export async function startApiServer(options: { port: number; stateDir: string; 
     '--persist-to', options.stateDir,
     '--show-interactive-dev-session', 'false',
     '--log-level', 'warn',
+    ...LOCAL_BINDINGS.flatMap((binding) => ['--binding', binding]),
   ]);
   try {
     await waitUntilReady(origin, child);
@@ -144,6 +162,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
       port: portFrom(args, process.env),
       stateDir: resolve(flag('--state', join(ROOT, '.wrangler', 'state'))),
       fresh: args.includes('--fresh'),
+      fixtures: args.includes('--fixtures'),
     });
     console.log(`site and catalog API at ${server.origin}/ (catalog: ${server.origin}/api/catalog/manifest.json)`);
     const stop = () => void server.close().then(() => process.exit(0));

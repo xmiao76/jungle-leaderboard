@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 export const fixture = (name: string) => fileURLToPath(new URL(`../../arena/test-fixtures/${name}`, import.meta.url));
@@ -107,4 +109,17 @@ export async function uploadTestEntrant(page: Page, seat: 'left' | 'right', vers
 export async function setUpTestVsSample(page: Page): Promise<void> {
   await uploadTestEntrant(page, 'left');
   await chooseVersion(page, 'right', SAMPLE, 'v1.1.0');
+  await playFriendly(page);
 }
+
+/** A non-standard node budget makes a match friendly, so ordinary tests leave Elo ratings alone. */
+export async function playFriendly(page: Page): Promise<void> {
+  await page.getByLabel('Shared search budget (nodes)').selectOption('5000');
+  await expect(page.getByTestId('rated-badge')).toHaveText('Friendly match');
+}
+
+/** SHA-256 of a test fixture, to open it in a seat by hash. */
+export const shaOf = (file: string) => createHash('sha256').update(readFileSync(fixture(file))).digest('hex');
+
+/** The seed catalog's reference program (the sample game). */
+export const SAMPLE_SHA: string = JSON.parse(readFileSync(new URL('../../seed/catalog/seed.json', import.meta.url), 'utf8')).entries[0].sha256;

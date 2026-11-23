@@ -1,21 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SNAPSHOT_DATE } from '../data/models';
-import { capitalize, countWord, formatRecord, formatSnapshotDate, ordinalWord } from './format';
-
-describe('formatSnapshotDate', () => {
-  it('formats the published snapshot date', () => {
-    expect(formatSnapshotDate(SNAPSHOT_DATE)).toBe('August 23, 2026');
-  });
-
-  it('does not drift a day in western timezones', () => {
-    // A naive `new Date('2026-01-01')` render in UTC-8 would print December 31.
-    expect(formatSnapshotDate('2026-01-01')).toBe('January 1, 2026');
-  });
-
-  it('throws on an unparseable date', () => {
-    expect(() => formatSnapshotDate('not-a-date')).toThrow(/ISO calendar date/);
-  });
-});
+import { capitalize, countWord, formatRecord, ordinalWord } from './format';
 
 describe('ordinalWord', () => {
   it('spells out the ordinals a leaderboard actually uses', () => {
@@ -74,7 +58,7 @@ describe('formatRecord', () => {
     expect(formatRecord({ wins: 4, losses: 1, draws: 0 })).toBe('4–1–0');
   });
 
-  it('falls back to an em dash when no record is published', () => {
-    expect(formatRecord(undefined)).toBe('—');
+  it('renders a fresh program as 0–0–0', () => {
+    expect(formatRecord({ wins: 0, losses: 0, draws: 0 })).toBe('0–0–0');
   });
 });

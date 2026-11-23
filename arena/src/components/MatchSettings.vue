@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { goToPlay, randomSeed, SPEEDS, state, type Speed } from '../app/arena';
+import { entryByHash, goToPlay, matchEligibility, randomSeed, SPEEDS, state, type Speed } from '../app/arena';
 import { DEADLINES, NODE_BUDGET_CHOICES, THINK_DEADLINE_CHOICES } from '../loader/limits';
 import { LEVELS, opponent } from '../referee/types';
 import { BTN, CARD, FIELD, LABEL } from '../ui/classes';
@@ -10,6 +10,12 @@ import { sideLabel } from '../ui/labels';
 const loading = computed(() => !state.booted);
 const canStart = computed(() => state.selection.left !== null && state.selection.right !== null && !loading.value);
 const speeds = Object.keys(SPEEDS) as Speed[];
+// Rated matches change both programs' Elo ratings (match/rated.ts); the rest are friendly.
+const eligibility = computed(() => matchEligibility(entryByHash(state.selection.left), entryByHash(state.selection.right), state.settings));
+const RATED_BADGE = {
+  rated: 'inline-flex items-center rounded-full border border-accent-line bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent',
+  friendly: 'inline-flex items-center rounded-full border border-line-strong px-2.5 py-0.5 text-xs font-semibold text-muted',
+} as const;
 
 function setSeed(event: Event) {
   const value = Number((event.target as HTMLInputElement).value);
@@ -97,6 +103,13 @@ function setSeed(event: Event) {
       <button type="button" :class="BTN.primary" :disabled="!canStart" data-testid="start" @click="goToPlay()">
         Start match (2 games) — full screen
       </button>
+      <span
+        :class="eligibility.rated ? RATED_BADGE.rated : RATED_BADGE.friendly"
+        :title="eligibility.rated ? 'Both programs’ Elo ratings change after this match.' : eligibility.reason"
+        data-testid="rated-badge"
+        :data-rated="eligibility.rated"
+        >{{ eligibility.rated ? 'Rated match' : 'Friendly match' }}</span
+      >
       <label class="inline-flex items-center gap-2 text-sm text-muted">
         <input v-model="state.settings.beginPaused" type="checkbox" data-testid="begin-paused" /> Begin paused (step through)
       </label>

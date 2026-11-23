@@ -153,7 +153,8 @@ export function mergeCatalog(
   const publicHashes = new Set(publicEntries.map((p) => p.sha256));
   for (const d of deviceEntries) {
     if (publicHashes.has(d.sha256)) continue;
-    merged.push({ sha256: d.sha256, size: d.size, metadata: d.metadata, origin: 'device', onDevice: true, addedAt: d.importedAt, file: null, provenance: null, credits: null, reference: false });
+    // Stored device metadata may predate modelPlatform; normalize it like checkMetadata does.
+    merged.push({ sha256: d.sha256, size: d.size, metadata: { ...d.metadata, modelPlatform: d.metadata.modelPlatform ?? '' }, origin: 'device', onDevice: true, addedAt: d.importedAt, file: null, provenance: null, credits: null, reference: false });
   }
   return merged;
 }

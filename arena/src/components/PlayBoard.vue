@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { flip, registerPresenter, resync, state } from '../app/arena';
 import type { Seat } from '../protocol/messages';
 import { BTN, SIDE_CHIP, SIDE_DOT } from '../ui/classes';
-import { ACTIVITY_LABEL, seatLabel, shortHash, sideLabel, squareName } from '../ui/labels';
+import { ACTIVITY_LABEL, authorshipLine, seatLabel, shortHash, sideLabel, squareName } from '../ui/labels';
 import { presentFrame } from '../ui/present';
 
 const props = defineProps<{ seat: Seat }>();
@@ -17,7 +17,7 @@ const snapshot = computed(() => state.match?.snapshot ?? null);
 const isTurn = computed(() => snapshot.value?.status === 'playing' && snapshot.value.toPlay === side.value);
 const identity = computed(() =>
   entrant.value
-    ? `${seatLabel(props.seat)} · ${side.value ? sideLabel(side.value) : ''} · ${entrant.value.metadata.title} v${entrant.value.metadata.gameVersion} · ${entrant.value.metadata.model} · ${entrant.value.metadata.codeAgent} · ${entrant.value.sha256}`
+    ? `${seatLabel(props.seat)} · ${side.value ? sideLabel(side.value) : ''} · ${entrant.value.metadata.title} v${entrant.value.metadata.gameVersion} · ${authorshipLine(entrant.value.metadata)} · ${entrant.value.sha256}`
     : seatLabel(props.seat),
 );
 

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,6 +36,19 @@ describe('startStaticServer with an API origin', () => {
       expect(seen).toEqual(['GET /api/catalog/manifest.json?x=1']);
       expect(await (await fetch(`${server.url}index.html`)).text()).toBe('<p>static</p>');
       expect((await fetch(`${server.url.replace('/nested/path/', '/')}api/catalog/manifest.json`)).status).toBe(404);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("serves Astro's root /_astro/ assets even under a prefix, but nothing else outside it", async () => {
+    mkdirSync(join(dir, '_astro'), { recursive: true });
+    writeFileSync(join(dir, '_astro', 'page.css'), 'body{}');
+    const server = await startStaticServer({ dir, prefix: '/nested/path/' });
+    try {
+      const root = server.url.replace('/nested/path/', '/');
+      expect(await (await fetch(`${root}_astro/page.css`)).text()).toBe('body{}');
+      expect((await fetch(`${root}index.html`)).status).toBe(404);
     } finally {
       await server.close();
     }

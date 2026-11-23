@@ -34,6 +34,7 @@ function upsert(entry: PublicEntry): string {
     sqlText(m.gameVersion),
     sqlText(m.model),
     sqlText(m.codeAgent),
+    sqlText(m.modelPlatform),
     sqlText(m.githubUrl),
     sqlText(m.engineVersion),
     sqlText(m.runtime),
@@ -46,12 +47,12 @@ function upsert(entry: PublicEntry): string {
     sqlText(entry.addedAt),
   ];
   return [
-    'INSERT INTO entrants (sha256, size, title, game_version, model, code_agent, github_url, engine_version, runtime,',
+    'INSERT INTO entrants (sha256, size, title, game_version, model, code_agent, model_platform, github_url, engine_version, runtime,',
     '  rules_id, rules_digest, provenance, credits, report, is_reference, created_at)',
     `VALUES (${values.join(', ')})`,
     'ON CONFLICT (sha256) DO UPDATE SET size = excluded.size, title = excluded.title,',
     '  game_version = excluded.game_version, model = excluded.model, code_agent = excluded.code_agent,',
-    '  github_url = excluded.github_url,',
+    '  model_platform = excluded.model_platform, github_url = excluded.github_url,',
     '  engine_version = excluded.engine_version, runtime = excluded.runtime, rules_id = excluded.rules_id,',
     '  rules_digest = excluded.rules_digest, provenance = excluded.provenance, credits = excluded.credits,',
     '  report = excluded.report, is_reference = excluded.is_reference;',
@@ -66,4 +67,12 @@ export function seedSql(entries: readonly PublicEntry[]): string {
   if (unsafe) throw new Error(unsafe);
   // Clear the flag first so moving it between entries never trips the one-reference index.
   return ['UPDATE entrants SET is_reference = 0 WHERE is_reference = 1;', ...entries.map(upsert)].join('\n\n') + '\n';
+}
+
+/** Extra entries (the e2e fixtures) on top of a seeded catalog; the reference is left alone. */
+export function upsertSql(entries: readonly PublicEntry[]): string {
+  if (entries.some((e) => e.reference)) throw new Error('only the seed catalog names the reference opponent');
+  const unsafe = entries.map(unsafeText).find((issue) => issue !== null);
+  if (unsafe) throw new Error(unsafe);
+  return entries.map(upsert).join('\n\n') + '\n';
 }

@@ -1,10 +1,8 @@
-import { BUILD_BUDGET_WORDS } from './models';
-
 /** Site-wide metadata. Keep `url` in sync with `site` in astro.config.mjs. */
 export const SITE = {
   name: 'Jungle Leaderboard',
-  title: 'Jungle Leaderboard — SOTA AI Model Coding Benchmark',
-  description: `Frontier AI models were each given about ${BUILD_BUDGET_WORDS} hours of agentic coding time to build a playable Jungle (Dou Shou Qi) program, then their programs competed. Rankings, playable builds, and source code.`,
+  title: 'Jungle Leaderboard — Live Elo Standings for Jungle Programs',
+  description: 'Published Jungle (Dou Shou Qi) programs ranked by Elo. Every program starts at 1000 once it passes the upload test; rated matches in the Arena move its rating. Upload your own and play them off.',
   url: 'https://jungle-leaderboard.pages.dev',
   repoUrl: 'https://github.com/xmiao76/jungle-leaderboard',
   author: 'xmiao76',

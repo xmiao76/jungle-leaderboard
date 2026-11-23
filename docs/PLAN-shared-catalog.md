@@ -208,7 +208,15 @@ Original plan:
 - Secrets: `TURNSTILE_SECRET`, `UPLOADER_SALT` (`wrangler pages secret put`); Turnstile's always-pass
   test keys locally and in CI.
 
-### Phase 3 — Test-gated upload in the browser
+### Phase 3 — Test-gated upload in the browser — **done 2026-11-22, not yet deployed**
+As built (Part A of [`PLAN-elo-ratings.md`](PLAN-elo-ratings.md), progress in
+[`HANDOFF-elo-ratings.md`](HANDOFF-elo-ratings.md)): `runUploadRound` in
+`arena/src/conformance/round.ts` reuses the conformance checks and `playMatch` (gained an `onPly`
+callback) for the two-game round at `medium`; `importFile` runs admission → round → Turnstile →
+`POST /api/catalog` and stores nothing until the server accepts (then only the transpile is cached
+locally); `ImportPanel.vue` shows all eleven stages with a live ply count. Device-only entries from
+before the change stay playable as friendly matches. Phase 5 below (production setup and deploy)
+still awaits the user's go-ahead.
 - Extract `runUploadRound(bytes, deps, onProgress)` from `conformance/main.ts` into
   `arena/src/conformance/round.ts`; the conformance page and the Upload page both call it, so the two
   cannot drift. The two games come from `planSeries` (game 2 swaps colours, so each program moves

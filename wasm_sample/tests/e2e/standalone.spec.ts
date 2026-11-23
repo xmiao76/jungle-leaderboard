@@ -54,7 +54,7 @@ test('loads from a nested path, shows the release identity, and offers the exact
   await open(page);
   const info = (await instantiate(RELEASE)).game.info();
   const identity = page.getByTestId('identity');
-  for (const key of ['model', 'codeAgent', 'githubUrl', 'engineVersion', 'runtime', 'rulesId'] as const) await expect(identity).toContainText(info[key]!);
+  for (const key of ['model', 'codeAgent', 'modelPlatform', 'githubUrl', 'engineVersion', 'runtime', 'rulesId'] as const) await expect(identity).toContainText(info[key]!);
   await expect(identity).toContainText(`${info['title']} v${info['gameVersion']}`);
   await page.getByRole('button', { name: 'Cancel' }).click();
 

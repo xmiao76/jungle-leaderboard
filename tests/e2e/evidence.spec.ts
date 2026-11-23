@@ -1,6 +1,6 @@
 // Render evidence for the README: one finished match between an uploaded program and the
 // public catalog's game, with each pane saved separately. Written to docs/evidence/.
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { canvasFingerprint, setFastPlay, setUpTestVsSample, startAndFinish } from './arena';

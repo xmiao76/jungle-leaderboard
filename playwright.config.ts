@@ -19,7 +19,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `node --import tsx scripts/api-server.ts --port ${API_PORT} --state .wrangler/e2e-state --fresh`,
+      command: `node --import tsx scripts/api-server.ts --port ${API_PORT} --state .wrangler/e2e-state --fresh --fixtures`,
       url: `http://127.0.0.1:${API_PORT}/api/catalog/manifest.json`,
       reuseExistingServer: !process.env['CI'],
       timeout: 180_000,

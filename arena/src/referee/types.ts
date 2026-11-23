@@ -51,6 +51,12 @@ export interface Metadata {
   readonly gameVersion: string;
   readonly model: string;
   readonly codeAgent: string;
+  /**
+   * The service/provider the model ran through (authors write "official" for the maker's own
+   * service when unanswered). Optional: binaries built before the field existed normalize to
+   * '' in checkMetadata, and '' is displayed as nothing.
+   */
+  readonly modelPlatform: string;
   /** The game's public GitHub repository URL (`https://github.com/<owner>/<repo>`). */
   readonly githubUrl: string;
   readonly engineVersion: string;

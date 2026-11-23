@@ -1,15 +1,18 @@
 # Jungle Leaderboard
 
-A leaderboard for an agentic-coding benchmark. Each frontier AI model is given roughly six hours of
-agentic coding time to build a playable **Jungle** — Chinese *Dou Shou Qi* (斗兽棋), "the game of
-fighting animals" — program from an empty repository. The finished programs are then played against
-one another.
+Live Elo standings for **Jungle** programs — Chinese *Dou Shou Qi* (斗兽棋), "the game of fighting
+animals". Anyone can upload a Jungle program built to the Arena's WebAssembly contract; once it
+passes the upload test it is published at 1000 Elo, and rated matches in the Arena move its rating
+from there. This began as an agentic-coding benchmark in which each frontier AI model was given
+roughly six hours to build a playable Jungle program from an empty repository; the programs still
+carry the model, code agent and model platform that produced them, but the standings are now decided by play, not
+by a one-off snapshot.
 
 **Live site:** <https://jungle-leaderboard.pages.dev>
 
 ---
 
-## What the benchmark measures
+## Why Jungle
 
 Most coding evaluations score a model on isolated functions or on patches to an existing codebase.
 This one asks a different question: given a fixed wall-clock budget and a single, fully specified
@@ -29,52 +32,39 @@ A naive implementation produces something that resembles Jungle and plays legall
 Defects concentrate in exactly the positions those exceptions govern. Competition play is what
 forces those positions to occur.
 
-## Methodology
+## How ratings work
 
-**Build phase.** Every model received the same task — implement a complete, playable Jungle program
-— and approximately six hours of agentic coding time in which to finish it. Each model worked inside
-the coding harness and effort setting recorded against it in the results table, so a row describes a
-model-plus-harness configuration rather than a model in isolation.
+**Publishing.** A program joins the standings at **1000 Elo** the moment it is published: upload it,
+and it must pass admission (size, header, hash, contract, transpile, smoke), the behaviour checks,
+and a two-game test round against the reference program. Only then is it stored and listed for
+everyone — a failing upload leaves nothing behind anywhere. One rating belongs to one exact build
+(its SHA-256): a new version is a new entry and starts again at 1000.
 
-**Competition phase.** The finished programs were played against one another. A model is credited
-with a win when the program it wrote wins its match: what competes is the artifact the model
-produced, not the model playing live.
+**Rated matches.** Only the standard settings count: two different published programs at *hard*,
+20,000 nodes, 5 seconds per move. A match is always two games with colours swapped, scored as one
+Elo update with K = 32 per game against the expected score over both games — win both against an
+equal and you gain 32. Anything else is a friendly match and is recorded nowhere. A rating is
+**Provisional** until a program has played five rated matches.
 
-**Failure criterion.** A program in which a defect is observed during competition — an illegal move
-accepted, a rule applied incorrectly, a crash, or a state the game cannot recover from — is recorded
-as a failure for the model that wrote it. Correctness is a precondition rather than a tiebreaker: a
-program that plays strongly but violates a rule does not outrank one that plays correctly.
+**Trust.** Matches are played in visitors' browsers (the free server tier cannot run the programs)
+and reported as moves. The server replays both games move by move and stores nothing unless every
+check passes; a match containing a forfeit — unprovable from moves — or between two programs from
+the same uploader is recorded as *unrated*. A maintainer can re-run any recorded match for real
+(`npm run matches:audit`), void a forgery, and fold the ratings again (`npm run ratings:recompute`).
 
-## Results
+### Reading the standings
 
-Standings as of **August 23, 2026**.
+The leaderboard at [`/`](https://jungle-leaderboard.pages.dev/) reads the ratings live from the
+database (`GET /api/leaderboard`) — there is no standings data in this repository. Ratings are shown
+rounded, and places follow standard competition ranking over the rounded rating: programs level at
+the same number share a place, and the places below the tie are not awarded. *Matches* counts rated
+two-game matches; *Games W–L–D* counts the individual games inside them. *Model*, *Code agent* and
+the smaller *Model platform* line are the names each program reports for its own authorship — the
+service or provider the model ran through (`official` for its maker's own, blank when undeclared).
 
-| # | Model | Access | Coding harness | Effort | Play | Source |
-|---|-------|--------|----------------|--------|------|--------|
-| 1 | Claude-Opus-5 | Closed | ClaudeCode | Max | [Play](https://claude-jungle.pages.dev/) | [Source](https://github.com/xmiao76/claude_cc_jungle_web) |
-| 2 | DeepSeek-V4-Pro-0813 | Open | ClaudeCode + Vision MCP | official Max | [Play](https://deepseek-jungle.pages.dev/) | [Source](https://github.com/xmiao76/deepseek_jungle_web) |
-| 3 | Grok-4.6 | Closed | GrokBuild | xhigh | [Play](https://grok-jungle.pages.dev/) | [Source](https://github.com/xmiao76/grok_jungle_web) |
-| 4 | GLM-5.3 | Open | ClaudeCode | Max | [Play](https://glm-jungle.pages.dev/) | [Source](https://github.com/xmiao76/glm_jungle_web) |
-| 4 | GPT-5.6-Sol | Closed | Codex | Max | [Play](https://gpt-jungle.pages.dev/) | [Source](https://github.com/xmiao76/gpt_jungle_web) |
-| 6 | Kimi-K3 | Open | ClaudeCode | Max | [Play](https://kimi-jungle.pages.dev/) | [Source](https://github.com/xmiao76/kimi_jungle_web) |
-| 6 | Qwen-3.8-Max | Open | ClaudeCode | xhigh | [Play](https://qwen-jungle.pages.dev/) | [Source](https://github.com/xmiao76/qwen_jungle_web) |
-
-*Access* indicates whether the model's weights are publicly available.
-
-### Reading the results
-
-Places follow standard competition ranking. GLM-5.3 and GPT-5.6-Sol finished level and share fourth
-place; Kimi-K3 and Qwen-3.8-Max share sixth. Each pair consumes the place below it, so neither fifth
-nor seventh is awarded. Models within a tie are level with one another and are not ordered — the
-alphabetical sequence shown inside a tie carries no meaning.
-
-Per-match records are not part of this snapshot; the table publishes final placements only. Every
-entry links to both the deployed build and its full source, so any result here can be replayed and
-inspected directly.
-
-A row should be read as one configuration of a model, not as a verdict on the model at every
-setting. The harness driving the model and the reasoning tier it ran at both materially affect the
-outcome.
+Correctness remains a precondition rather than a tiebreaker: a program must pass the upload test
+round to be published at all, and a game it forfeits mid-match (illegal move, trap, timeout) makes
+the whole match unrated rather than a cheap loss or win.
 
 ---
 
@@ -87,8 +77,8 @@ the same nav (Leaderboard · Upload · Arena):
 
 | Page | Path | What it does |
 |---|---|---|
-| Leaderboard | [`/`](https://jungle-leaderboard.pages.dev/) | The benchmark standings (this README's Results). |
-| Upload | [`/arena/upload/`](https://jungle-leaderboard.pages.dev/arena/upload/) | Import a `.wasm`, watch each check run, see your uploads and the public catalog, remove uploads. |
+| Leaderboard | [`/`](https://jungle-leaderboard.pages.dev/) | The live Elo standings of every published program, read from the database. |
+| Upload | [`/arena/upload/`](https://jungle-leaderboard.pages.dev/arena/upload/) | Import a `.wasm`, watch each check and the test round run, and publish it for everyone at 1000 Elo. |
 | Arena setup | [`/arena/`](https://jungle-leaderboard.pages.dev/arena/) | Pick a program and version for each seat and the match settings, then **Start**; saved replays. |
 | Arena play | `/arena/play/?…` | Full screen, no scrolling: the two boards as large as the window allows, one slim control bar. Also plays back replays. |
 
@@ -96,9 +86,11 @@ The Arena was built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in
 
 ### Using it
 
-1. On **Upload**, choose **Import .wasm**. Each check is shown as it runs, then the program's model,
-   code agent, version, runtime and rules compatibility, and two frames it drew. **Play in left/right
-   seat** opens the Arena with it selected (seat choices are remembered across pages).
+1. On **Upload**, choose **Import .wasm**. Each stage is shown as it runs - admission, the behaviour
+   checks, then the two test games against the reference program with a live ply count, then
+   publishing - followed by the program's model, code agent, version, runtime and rules
+   compatibility, and two frames it drew. **Play in left/right seat** opens the Arena with it
+   selected (seat choices are remembered across pages).
    On the **Arena** setup page, pick a program and an exact version (each build is identified by its
    SHA-256) for each seat. A link of the form `/arena/?left=<sha256>&right=<sha256>` preselects both.
 2. Choose which column plays Red, who moves first, difficulty, seed, the shared node budget, the think
@@ -123,20 +115,31 @@ The Arena was built by **Claude-Opus-5.5** with **ClaudeCode** from the brief in
    and reopen on another device with the original programs (or a labeled reference board). **Open**
    plays a replay back on the same full-screen page, with a seek bar.
 
-### Two catalogs
+### The shared catalog
 
-- **On this device** — files you import. They are validated, then saved in this browser's IndexedDB
-  by content hash and immediately usable. Identical bytes reuse the entry; a new hash is a new entry
-  even if the title and version are unchanged. Nothing is uploaded anywhere.
-- **Public catalog** — the Arena's database. A Pages Function serves the list from Cloudflare D1
-  (`/api/catalog/manifest.json`) and each program's bytes from R2 (`/api/catalog/<sha256>.wasm`);
-  every download is verified against its listed hash. Curated programs live in
-  [`seed/catalog/`](seed/catalog/): a maintainer adds one with `npm run catalog:add -- path/to/file.wasm`
-  (the same checks a browser import runs, plus a smoke test in a killable child process) and loads it
-  with `npm run db:seed -- --remote`. `npm test` re-verifies every seed file.
+Uploading **publishes**: the file exists only in the page's memory while admission, the behaviour
+checks and the two-game test round run; only if everything passes is it sent to the server, which
+re-checks what it can, stores the bytes in R2 and the entry in D1 at 1000 Elo. If any step fails,
+nothing is stored anywhere — no database row, no file, no local copy. A Pages Function serves the
+list from D1 (`/api/catalog/manifest.json`) and each program's bytes from R2
+(`/api/catalog/<sha256>.wasm`); every download is verified against its listed hash. Identical bytes
+reuse the existing entry; a new hash is a new entry even if the title and version are unchanged.
+Programs a browser imported before publishing existed still appear under **On this device** (this
+browser's IndexedDB) and play friendly matches only. The design is recorded in
+[`docs/PLAN-shared-catalog.md`](docs/PLAN-shared-catalog.md) and
+[`docs/PLAN-elo-ratings.md`](docs/PLAN-elo-ratings.md).
 
-Publishing visitors' uploads to the shared catalog, after a full functional test, is planned in
-[`docs/PLAN-shared-catalog.md`](docs/PLAN-shared-catalog.md).
+Curated seed programs live in [`seed/catalog/`](seed/catalog/): a maintainer adds one with
+`npm run catalog:add -- path/to/file.wasm` (the same checks a browser import runs, plus a smoke test
+in a killable child process) and loads it with `npm run db:seed -- --remote`. `npm test` re-verifies
+every seed file.
+
+**Rated and friendly matches.** The setup and play pages badge every pairing: *Rated* at the
+standard settings between two different published programs, *Friendly* otherwise. After a rated
+match the result dialog shows each program's rating change (e.g. `Elo 1000 → 1016 (+16)`); a forfeit
+or a same-uploader pairing is recorded as unrated and says so. Recorded matches - the two programs,
+each game's result and moves, the wins/losses/draws and the ratings before and after - live in the
+D1 `matches` table, which is what the leaderboard's standings fold from.
 
 The Arena referees the `desktop-jungle-v2` rules (`sdk/rules/`): the v1 rulebook plus a **draw by
 repetition** when a move produces the same position (all squares and the side to move) for the third
@@ -177,13 +180,15 @@ support is implemented with the same code paths but could not be exercised on th
 ### Test record — local runs
 
 Run on Windows 10 with Node 26.13.1 against the production build served from a nested subpath
-(`/nested/static/path/`). Recorded on 2026-11-21.
+(`/nested/static/path/`), with the catalog/rating APIs on fresh local D1/R2. Recorded on
+2026-11-22, after the Elo work.
 
 | Suite | Command | Result |
 |---|---|---|
-| Referee, loader, contract, controller, storage, catalog, replay, leaderboard logic | `npm test` | 186 tests pass; Arena logic coverage 86 % statements / 91 % lines (threshold 80 %) |
-| Page navigation, full-screen layout (no scroll at 1920×1080, 1366×768, 1280×720 and portrait), upload, admission, matches, recovery, replay-after-reload in real browsers | `npm run test:e2e` | 115 of 116 runs pass, none fail: 29/29 in Chromium 159, installed Chrome and Edge; 28/28 in WebKit (Safari engine), where the Chromium-only evidence capture is skipped |
-| Conformance runner | `npm run conformance -- <file>` | The sample and the test entrant **pass**; `late-index` **fails** (forfeits); `broken-extra-import` is **rejected** at the contract stage |
+| Referee, loader, contract, controller, storage, catalog, replay, uploads, match reports + verifier, Elo, leaderboard logic, maintainer tools | `npm test` | 342 tests pass; Arena+server logic coverage 88.5 % statements / 92.7 % lines (threshold 80 %) |
+| Page navigation, full-screen layout (no scroll at 1920×1080, 1366×768, 1280×720 and portrait), upload → publish, admission, matches (incl. rated Elo changes), the live leaderboard, recovery, replay-after-reload in real browsers | `npm run test:e2e` | 35/35 in Chromium 159 (the run recorded here; earlier full-matrix runs also passed in installed Chrome/Edge and WebKit, where the Chromium-only evidence capture is skipped) |
+| Conformance runner | `npm run conformance -- <file>` | The sample **passes**; `late-index` **fails** (forfeits); `broken-extra-import` is **rejected** at the contract stage |
+| Rating maintenance | `ratings:recompute`, `matches:audit` | On the e2e database: recompute reproduces the stored ratings exactly (0 corrections), every counted game re-runs **OK**, and voiding a match folds both programs back to 1000 |
 
 Firefox: Playwright's Firefox build could not launch on the test machine (the Visual C++ 2015–2022
 runtime, `msvcp140_1.dll`, is not installed) and desktop Firefox is not installed — so Firefox is
@@ -237,7 +242,8 @@ npm run dev:arena  # terminal 2: Arena with hot reload at http://localhost:4322
 ```
 
 The Arena dev server forwards `/api` to `dev:full`, so edits to `arena/src/` appear immediately.
-For the leaderboard page alone, `npm run dev` (http://localhost:4321) is enough. After changing
+For leaderboard markup alone, `npm run dev` (http://localhost:4321) is enough, but its standings
+need the API: without `dev:full` the section correctly shows its error state. After changing
 `functions/` or `server/`, restart `dev:full`; after changing `wrangler.toml`, also run
 `npm run cf-typegen`.
 
@@ -260,6 +266,10 @@ npm run catalog:add -- path/to/file.wasm # add a binary to seed/catalog/ after t
 npm run catalog:verify                   # every seed file matches its hash in seed.json and the contract; exactly one reference
 npm run db:migrate -- --local            # apply migrations/ to local D1 (--remote: production)
 npm run db:seed -- --local               # load seed/catalog/ into local D1/R2 (--remote: production)
+npm run ratings:recompute -- --local     # re-fold Elo ratings from counted matches (--dry-run to preview)
+npm run matches:audit -- --local         # re-run recorded matches in Node; --void <id> withdraws one and recomputes
+npm run program:remove -- --local --list # list published programs; remove/hide one by --sha or --title
+npm run program:remove -- --local --title "Muse Jungle" --version 1.2.0 # example: remove that published program
 npm run conformance -- path/to/file.wasm [--browser chromium|webkit|chrome|msedge|firefox] [--url <deployed arena>]
 ```
 
@@ -268,31 +278,30 @@ The browser tests need Playwright's browsers once: `npx playwright install chrom
 Run a single test file or a single case:
 
 ```bash
-npx vitest run src/lib/ranking.test.ts
-npx vitest run -t 'rejects a gap in the place sequence'
+npx vitest run src/lib/elo-ranking.test.ts
+npx vitest run -t 'assigns competition places from the rounded rating'
 ```
 
 ### Project layout
 
 ```
 src/
-  data/models.ts        Leaderboard data — the single source of truth
   data/site.ts          Site title, description, canonical URL, byline
-  lib/ranking.ts        buildLeaderboard() and validateEntries(), both pure
-  lib/summary.ts        Open/closed counts and Record-column visibility
+  lib/elo-ranking.ts    Leaderboard wire format, parser, places, medals, links, copy
   lib/ties.ts           describeRanking() — generates the shared-place sentence
-  lib/format.ts         Dates, records, ordinals and number words
+  lib/format.ts         Records, ordinals and number words
   lib/*.test.ts         Vitest coverage for the logic above
-  components/           Presentational Astro components
-  layouts/BaseLayout    <head>, metadata, JSON-LD, skip link
-  pages/index.astro     Composes the page; validates data at build time
+  components/           Presentational Astro components (header, rules, sections, footer)
+  layouts/BaseLayout    <head>, metadata, skip link
+  pages/index.astro     Standings templates + bundled script over GET /api/leaderboard
   styles/tokens.css     Design tokens shared with the Arena
   styles/global.css     Base styles, responsive table rules
 arena/                  The Arena: Vue 3 + Vite app built to dist/arena/ (base './')
   src/                  referee, loader, match, workers, storage, catalog, replay, components
   test-fixtures/        Test-only components: a small well-behaved entrant and deliberately broken ones
-functions/              Pages Functions: the catalog API (/api/catalog/…)
-server/                 Catalog API logic and its tests (real local D1/R2)
+functions/              Pages Functions: catalog, match reports, leaderboard (/api/…)
+server/                 API logic and its tests (real local D1/R2): catalog, uploads, match
+                        reports + game verifier, Elo, leaderboard
 migrations/             D1 schema
 seed/catalog/           Curated catalog programs + seed.json, loaded by `npm run db:seed`
 wrangler.toml           Pages config and the D1/R2 bindings
@@ -305,19 +314,61 @@ wasm_sample/            The standalone game and its Arena entrant (a self-contai
 arena_prompt.md         The Arena brief
 ```
 
-Tests cover the logic layer. The components are verified through the build: `npm run build` fails on
-malformed data, and the rendered `dist/index.html` is the artifact to inspect.
+Tests cover the logic layer. The Astro markup and its bundled script are verified through the build
+and the Playwright leaderboard spec, and the rendered `dist/index.html` is the artifact to inspect.
 
-### Updating the leaderboard
+### Maintaining the ratings
 
-Edit `src/data/models.ts` — nothing else holds leaderboard data. `validateEntries()` runs during the
-build and fails it if an entry has a duplicate id, blank required text, a non-HTTPS URL, a source URL
-outside github.com, or a place sequence that is not valid competition ranking (a gap, or a tie that
-does not skip the following place).
+Nothing about the standings is edited by hand — they are the fold of the recorded matches. Three
+maintainer tools keep them honest (each takes `--local` or `--remote`, and `--dry-run`):
 
-To publish head-to-head records later, add a `record: { wins, losses, draws }` field to any entry.
-The table renders a Record column automatically once at least one entry has one, so no template
-change is needed.
+- `npm run matches:audit` downloads both programs of each recorded match and re-runs the games in
+  Node; every move and the ending must match the report. `--void <id>` withdraws a match that does
+  not verify (or was selectively reported) and recomputes in the same run.
+- `npm run ratings:recompute` re-folds the `counted` matches in order and corrects any stored
+  standing that differs, appending one `rating_changes` row per corrected program. On a healthy
+  database it reports no changes.
+- `npm run program:remove` takes a published program down: by default a hard delete (match
+  records, rating history, catalog row and R2 binary, then a recompute when it had counted
+  matches); `--hide`/`--unhide` is the reversible version. There is deliberately no UI for this —
+  uploads are anonymous, so only a maintainer can unpublish. The reference opponent and (for hard
+  delete) seed entries are refused, and `--dry-run` previews everything.
+
+#### Example: removing a published program
+
+```bash
+# 1. Find the program (title, version, identity, Elo, and the --sha to use)
+npm run program:remove -- --local --list
+#   "Muse Jungle" v1.2.0 (Muse · …, 1c7c47873ad8…, listed, Elo 1000, 0 rated match(es))
+#     --sha 1c7c47873ad8cdf74c26d861199f54cea30501f9c26c42b2ff0fabc45727afd8
+
+# 2. Preview exactly what would go — nothing is written
+npm run program:remove -- --local --title "Muse Jungle" --version 1.2.0 --dry-run
+# program:remove: REMOVE "Muse Jungle" v1.2.0 (…, 1c7c47873ad8…, listed, Elo 1000, 0 rated match(es))
+#   match records: 0 counted, 1 unrated, 0 voided; 0 rating change(s)
+# program:remove: --dry-run, nothing written
+
+# 3. Remove it for real (by --title/--version, or unambiguously by --sha)
+npm run program:remove -- --local --sha 1c7c47873ad8cdf74c26d861199f54cea30501f9c26c42b2ff0fabc45727afd8
+# program:remove: REMOVE "Muse Jungle" v1.2.0 …
+# program:remove: catalog row, match records and rating history deleted
+# program:remove: binary deleted from R2
+# program:remove: done. Re-uploading the same file would publish it fresh at 1000 Elo.
+
+# Prefer reversible? Hide instead — it vanishes from catalog, pickers and leaderboard,
+# its .wasm URL 404s, and --unhide restores it. Ratings are untouched either way.
+npm run program:remove -- --local --sha <sha256> --hide
+npm run program:remove -- --local --sha <sha256> --unhide
+```
+
+Notes on the sample: the one match record was `unrated` (same-uploader), so no recompute ran; had
+the program owned *counted* matches, the tool would re-fold the remaining ratings automatically
+after deleting. Hard delete is irreversible — the only way back is re-uploading the file, which
+publishes it fresh at 1000. Hiding a seed entry survives `db:seed`; hard-deleting one is refused
+(remove it from `seed/catalog/` first). If your `npm` warns that it is swallowing flags after
+`--` (some versions do), add one more: `npm run program:remove -- -- --local --list`, or call
+`node --import tsx scripts/program-remove.ts --local --list` directly. Everything above works
+against production unchanged by swapping `--local` for `--remote`.
 
 ## Deployment
 
@@ -329,8 +380,8 @@ publishing is an explicit command:
 npm run deploy
 ```
 
-That runs the test suite and a type-checked build before uploading, so a malformed data edit cannot
-reach production. The upload contains both the leaderboard and the Arena (`dist/arena/`, including
+That runs the test suite and a type-checked build before uploading, so a broken change cannot reach
+production half-applied. The upload contains both the leaderboard and the Arena (`dist/arena/`, including
 the public catalog binaries and jco's ~8 MB of transpiler WebAssembly, every file under Pages'
 25 MiB limit). It needs a Cloudflare session — run `npx wrangler login` once if
 `npx wrangler whoami` reports you are not logged in.

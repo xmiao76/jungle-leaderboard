@@ -1,5 +1,5 @@
 // One command to rebuild both outputs from a clean checkout:
-//   1. the single-file Arena entrant  dist/jungle-opus55-1.1.0.wasm  (+ fixture and test builds)
+//   1. the single-file Arena entrant  dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm  (+ fixture and test builds)
 //   2. the standalone static site      web/dist/
 //
 //   node scripts/build-all.mjs [--skip-web-build]
@@ -15,7 +15,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 const PUBLIC = join(ROOT, 'web', 'public');
 const TARGET = join(ROOT, 'target', 'wasm32-unknown-unknown', 'release');
-export const RELEASE_NAME = 'jungle-opus55-1.1.0.wasm';
+export const RELEASE_NAME = 'jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm';
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const run = (cmd, args, cwd = ROOT) => execFileSync(cmd, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' && cmd !== 'cargo' && cmd !== 'node' });

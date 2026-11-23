@@ -7,7 +7,7 @@ import * as web from '../web/src/pkg/jungle_web.js';
 export { web };
 
 const here = (path: string) => new URL(path, import.meta.url);
-export const RELEASE = here('../dist/jungle-opus55-1.1.0.wasm');
+export const RELEASE = here('../dist/jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm');
 export const TEST_BUILD = here('../dist/test/jungle-opus55-test.wasm');
 export const FIXTURE = here('../dist/jungle-fixture-1.0.0.wasm');
 

@@ -15,6 +15,7 @@ describe('rowToPublicEntry', () => {
         gameVersion: '1.0.0',
         model: 'Model-X',
         codeAgent: 'Agent-Y',
+        modelPlatform: 'official',
         githubUrl: 'https://github.com/example/jungle',
         engineVersion: 'engine 1',
         runtime: 'Rust',

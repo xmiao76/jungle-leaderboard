@@ -12,6 +12,7 @@ export function sampleRow(overrides: Partial<EntrantRow> = {}): EntrantRow {
     game_version: '1.0.0',
     model: 'Model-X',
     code_agent: 'Agent-Y',
+    model_platform: 'official',
     github_url: 'https://github.com/example/jungle',
     engine_version: 'engine 1',
     runtime: 'Rust',

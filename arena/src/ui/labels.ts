@@ -2,11 +2,19 @@
 import type { MatchPhase, MatchResult, SeatActivity } from '../match/controller';
 import type { SeatRecord, SeriesGame, SeriesSummary } from '../match/series';
 import type { Seat } from '../protocol/messages';
-import type { Side, Snapshot } from '../referee/types';
+import type { Metadata, Side, Snapshot } from '../referee/types';
 
 export const seatLabel = (seat: Seat) => (seat === 'left' ? 'Left seat' : 'Right seat');
 export const sideLabel = (side: Side) => (side === 'red' ? 'Red' : 'Blue');
 export const shortHash = (sha256: string) => `${sha256.slice(0, 8)}…${sha256.slice(-4)}`;
+
+/**
+ * "Model · CodeAgent", plus "· Platform" when one is declared. An absent modelPlatform
+ * (metadata persisted before the field existed) reads as empty and adds nothing.
+ */
+export function authorshipLine(metadata: Pick<Metadata, 'model' | 'codeAgent' | 'modelPlatform'>): string {
+  return [metadata.model, metadata.codeAgent, metadata.modelPlatform || null].filter(Boolean).join(' · ');
+}
 
 export const PHASE_LABEL: Readonly<Record<MatchPhase, string>> = {
   loading: 'Loading entrants',
@@ -95,4 +103,12 @@ export function gameOutcome(game: SeriesGame, names: Readonly<Record<Seat, strin
   const why = REASON_TEXT[result.reason] ?? result.reason;
   if (result.status === 'drawn') return `Drawn · ${why}`;
   return result.winnerSeat ? `${names[result.winnerSeat]} won · ${why}` : `Game over · ${why}`;
+}
+
+/** "1000 → 1016 (+16)": ratings are stored unrounded and shown as whole points. */
+export function formatRatingChange(change: { readonly before: number; readonly after: number }): string {
+  const [before, after] = [Math.round(change.before), Math.round(change.after)];
+  const delta = Math.round(change.after - change.before);
+  const sign = delta > 0 ? `+${delta}` : delta < 0 ? `−${-delta}` : '±0';
+  return `${before} → ${after} (${sign})`;
 }

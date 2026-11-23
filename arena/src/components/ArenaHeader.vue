@@ -19,7 +19,7 @@ const COPY = {
   upload: {
     title: 'Upload a game',
     lede: 'Bring your own Jungle program, compiled to one WebAssembly Component.',
-    body: 'Your file is checked here, in this browser, before any of its code runs. Once it passes, it is saved on this device and ready to play in either seat of the Arena.',
+    body: 'Your file is checked here, in this browser, before any of its code runs, then tested in two games against the reference program. Once it passes, it is published to the Arena catalog for everyone, starting at an Elo rating of 1000.',
   },
 } as const;
 

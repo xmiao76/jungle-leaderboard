@@ -1,6 +1,6 @@
 // The site has three separate pages: leaderboard (/), game upload (/arena/upload/) and
 // the Arena (/arena/). Each has its own path and title, and the shared nav links them.
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { fixture, importWasm, openArena, openUpload, playInSeat, SAMPLE, TEST_ENTRANT } from './arena';
 
 test('leaderboard, upload and arena are separate pages linked by the site nav', async ({ page }) => {
@@ -25,21 +25,33 @@ test('leaderboard, upload and arena are separate pages linked by the site nav', 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Jungle Leaderboard');
 });
 
-test('the upload page lists both catalogs and manages this device’s uploads', async ({ page }) => {
+test('an upload that fails its test round is not published, and nothing is stored', async ({ page }) => {
   await openUpload(page);
-  await expect(page.getByTestId('public-list').locator('li[data-sha]')).toHaveCount(1);
   await expect(page.getByTestId('public-list')).toContainText(SAMPLE);
-  await expect(page.getByTestId('device-list')).toContainText('Nothing uploaded yet');
+  await expect(page.getByTestId('device-list')).toContainText('New uploads are published');
+  const published = page.getByTestId('public-list').locator('li[data-sha]');
+  const before = await published.count();
 
-  await importWasm(page, fixture('test-entrant-1.1.0.wasm'));
-  const row = page.getByTestId('device-list').locator('li[data-sha]');
-  await expect(row).toHaveCount(1);
-  await expect(row).toContainText(TEST_ENTRANT);
-  await expect(row).not.toContainText('also in the public catalog');
+  // late-trap passes admission, then crashes in its first game against the reference.
+  await page.getByTestId('import-input').setInputFiles(fixture('late-trap.wasm'));
+  const rejected = page.getByTestId('import-rejected');
+  await expect(rejected).toBeVisible({ timeout: 90_000 });
+  await expect(rejected).toContainText('Not published');
+  await expect(rejected).toContainText('Nothing was stored');
+  await expect(page.locator('[data-stage="smoke"]')).toHaveAttribute('data-state', 'done');
+  await expect(page.locator('[data-stage="game-1"]')).toHaveAttribute('data-state', 'failed');
+  await expect(published).toHaveCount(before);
+  await expect(page.getByTestId('device-list')).toContainText('New uploads are published');
+});
 
-  const sha = (await row.getAttribute('data-sha'))!;
-  await page.getByTestId(`remove-${sha.slice(0, 8)}`).click();
-  await expect(page.getByTestId('device-list')).toContainText('Nothing uploaded yet');
+test('uploading a program that is already published reuses its entry', async ({ page }) => {
+  // The e2e catalog already holds test-entrant-1.1.0 (scripts/e2e-fixtures.ts).
+  expect(await importWasm(page, fixture('test-entrant-1.1.0.wasm'))).toBe(TEST_ENTRANT);
+  await expect(page.getByTestId('import-admitted')).toContainText('Already published');
+  await expect(page.getByTestId('import-admitted')).toContainText('Model platform');
+  await expect(page.getByTestId('import-admitted')).toContainText('official');
+  await expect(page.locator('[data-stage="publish"]')).toHaveAttribute('data-state', 'done');
+  await expect(page.locator('[data-stage="game-2"] [data-testid="plies-game-2"]')).toContainText('plies');
 });
 
 test('an uploaded game opens in the chosen seat, and seats can be shared as a link', async ({ page }) => {

@@ -1,13 +1,22 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { chooseVersion, fixture, importWasm, openArena, playInSeat, SAMPLE, setFastPlay, setUpTestVsSample, startMatch, waitForMatchResult } from './arena';
+import { chooseVersion, fixture, openArena, SAMPLE, setFastPlay, setUpTestVsSample, startMatch, waitForMatchResult } from './arena';
 
 test.describe.configure({ mode: 'serial' });
 
-/** Import a late-failing entrant into the left seat (Red) against the public catalog game. */
+/** SHA-256 of a test fixture, to open it in a seat by hash. */
+const shaOf = (file: string) => createHash('sha256').update(readFileSync(fixture(file))).digest('hex');
+
+/**
+ * Put a late-failing entrant in the left seat (Red) against the public catalog game. These
+ * programs pass admission but misbehave mid-game, so they can never pass the upload round; the
+ * e2e catalog publishes them directly (scripts/e2e-fixtures.ts) and the test opens one by hash.
+ */
 async function lateMatch(page: Page, file: string, thinkDeadline?: string) {
-  await importWasm(page, fixture(file));
-  await playInSeat(page, 'left');
+  await page.goto(`arena/?left=${shaOf(file)}`);
+  await expect(page.locator('[data-page="arena"][data-booted="true"]')).toBeVisible({ timeout: 30_000 });
   await setFastPlay(page);
   await chooseVersion(page, 'right', SAMPLE, 'v1.1.0');
   await page.getByTestId('left-red').check();

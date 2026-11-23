@@ -1,84 +1,327 @@
 ---
 import ContentSection from '../components/ContentSection.astro';
 import GameRules from '../components/GameRules.astro';
-import LeaderboardTable from '../components/LeaderboardTable.astro';
-import Methodology from '../components/Methodology.astro';
-import Podium from '../components/Podium.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import SiteHeader from '../components/SiteHeader.astro';
-import StatsBar from '../components/StatsBar.astro';
-import { BUILD_BUDGET_HOURS, MODELS, SNAPSHOT_DATE } from '../data/models';
 import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { buildLeaderboard, validateEntries } from '../lib/ranking';
-import { summarize } from '../lib/summary';
-import { describeRanking } from '../lib/ties';
 
-// Fails the build rather than shipping a page with bad data or a broken link.
-validateEntries(MODELS);
+// The standings are live: this page ships empty templates (one per medal variant, so every
+// class string stays literal for Tailwind's scanner) and the bundled script below clones them
+// with the answer from GET api/leaderboard. Entry text is uploader-controlled (it comes from
+// each program's own info()), so the script fills nodes with textContent only — never innerHTML.
+const HEADINGS = ['Rank', 'Program', 'Model', 'Code agent', 'Rating', 'Matches', 'Games W–L–D', 'GitHub', 'Play in the Arena'] as const;
+const HEAD_CELL = 'px-4 py-3.5 font-semibold';
+const CELL = 'md:border-b md:border-line md:px-4 md:py-4 md:align-middle';
 
-const ranked = buildLeaderboard(MODELS);
-const stats = summarize(MODELS);
-const rankingNote = describeRanking(MODELS);
+const ROW_VARIANTS = [
+  { key: 'gold', badge: 'border-gold-line bg-gold-soft text-gold', rule: 'var(--c-gold)' },
+  { key: 'silver', badge: 'border-silver-line bg-silver-soft text-silver', rule: 'var(--c-silver)' },
+  { key: 'bronze', badge: 'border-bronze-line bg-bronze-soft text-bronze', rule: 'var(--c-bronze)' },
+  { key: 'none', badge: 'border-line bg-inset text-muted', rule: 'var(--c-accent-line)' },
+] as const;
 
-const structuredData = JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'ItemList',
-  name: SITE.name,
-  description: SITE.description,
-  url: SITE.url,
-  numberOfItems: ranked.length,
-  itemListOrder: 'https://schema.org/ItemListOrderAscending',
-  itemListElement: ranked.map((entry, index) => ({
-    '@type': 'ListItem',
-    position: index + 1,
-    name: `${entry.model} (${entry.provider})`,
-    url: entry.playUrl,
-  })),
-});
+const PODIUM_VARIANTS = [
+  { place: 1, medal: '🥇', label: 'First place', card: 'border-gold-line bg-gold-soft', ink: 'text-gold', rise: 'md:pb-10' },
+  { place: 2, medal: '🥈', label: 'Second place', card: 'border-silver-line bg-silver-soft', ink: 'text-silver', rise: 'md:pb-6' },
+  { place: 3, medal: '🥉', label: 'Third place', card: 'border-bronze-line bg-bronze-soft', ink: 'text-bronze', rise: 'md:pb-4' },
+] as const;
+
+const BUTTON = 'inline-flex items-center gap-1.5 rounded-full font-semibold whitespace-nowrap transition-colors';
 ---
 
-<BaseLayout title={SITE.title} description={SITE.description} structuredData={structuredData}>
+<BaseLayout title={SITE.title} description={SITE.description}>
   <div class="mx-auto w-full max-w-6xl px-5 sm:px-8">
-    <SiteHeader isoDate={SNAPSHOT_DATE} modelCount={stats.total} />
+    <SiteHeader />
 
-    <StatsBar
-      total={stats.total}
-      openCount={stats.openCount}
-      closedCount={stats.closedCount}
-      budgetHours={BUILD_BUDGET_HOURS}
-    />
+    <section id="leaderboard" data-lb data-state="loading" aria-labelledby="leaderboard-heading" class="mt-12 scroll-mt-8 sm:mt-16">
+      <div class="flex items-baseline gap-4">
+        <h2 id="leaderboard-heading" class="font-display text-2xl font-semibold text-fg">Standings</h2>
+        <span class="h-px flex-1 bg-line"></span>
+      </div>
 
-    <Podium entries={ranked} />
+      <p data-lb-status role="status" class="mt-4 text-sm text-subtle">Loading standings…</p>
 
-    <LeaderboardTable entries={ranked} showRecord={stats.hasRecords} />
+      <noscript>
+        <p class="mt-4 rounded-2xl border border-line bg-raised p-5 text-sm text-muted">
+          The standings are read live from the Arena database, so they need JavaScript. The
+          <a href="arena/" class="font-semibold text-accent underline-offset-4 hover:underline">Arena</a> itself lists every published program.
+        </p>
+      </noscript>
 
-    <Methodology isoDate={SNAPSHOT_DATE} budgetHours={BUILD_BUDGET_HOURS} />
+      <div data-lb-error hidden class="mt-5 rounded-2xl border border-line bg-raised p-5">
+        <p class="text-sm leading-relaxed text-muted">
+          The standings could not be loaded. <span data-lb-error-detail></span>
+        </p>
+        <button data-lb-retry type="button" class:list={[BUTTON, 'mt-4 px-4 py-2 text-sm bg-accent text-accent-ink hover:brightness-110']}>Try again</button>
+      </div>
+
+      <div data-lb-empty hidden class="mt-5 rounded-2xl border border-line bg-raised p-5">
+        <p class="text-sm leading-relaxed text-muted">No programs have been published yet. Be the first: upload a Jungle program, pass the test round, and it joins the standings at 1000 Elo.</p>
+        <p class="mt-4 flex flex-wrap gap-2.5">
+          <a href="arena/upload/" class:list={[BUTTON, 'px-4 py-2 text-sm bg-accent text-accent-ink hover:brightness-110']}>Upload a program</a>
+          <a href="arena/" class:list={[BUTTON, 'px-4 py-2 text-sm border border-line-strong text-muted hover:border-accent hover:text-accent']}>Open the Arena</a>
+        </p>
+      </div>
+
+      <div data-lb-ready hidden>
+        <h3 class="sr-only">Top three</h3>
+        <ol class="podium mt-6 grid gap-4 md:grid-cols-3" data-lb-podium></ol>
+
+        <div class="mt-10 md:overflow-x-auto md:rounded-2xl md:border md:border-line md:bg-raised md:shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <table class="lb-table w-full caption-bottom border-collapse text-left text-sm">
+            <caption class="px-1 pt-4 text-xs leading-relaxed text-subtle md:px-5 md:pb-4">
+              <span data-lb-note>Places follow standard competition ranking.</span> Ratings are shown rounded, and programs at the same rounded rating share a place. A rating is provisional until a program has played five rated matches. GitHub links open in a new tab.
+            </caption>
+            <thead>
+              <tr class="border-b border-line-strong bg-inset text-[0.68rem] tracking-[0.1em] text-subtle uppercase">
+                {HEADINGS.map((heading) => (
+                  <th scope="col" class={HEAD_CELL}>{heading}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody data-lb-rows></tbody>
+          </table>
+        </div>
+      </div>
+
+      {PODIUM_VARIANTS.map((variant) => (
+        <template data-podium={String(variant.place)}>
+          <li class:list={['reveal-rise flex flex-col rounded-2xl border p-5 md:p-6', variant.card, variant.rise]}>
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-3xl leading-none" aria-hidden="true">{variant.medal}</span>
+              <span class:list={['text-[0.66rem] font-semibold tracking-[0.12em] uppercase', variant.ink]}>{variant.label} <span data-f="tied" hidden>(tied)</span></span>
+            </div>
+            <h3 class="mt-4 font-display text-xl leading-tight font-semibold text-balance text-fg" data-f="title"></h3>
+            <p class="mt-1.5 text-sm text-subtle" data-f="subline"></p>
+            <p class="mt-3 font-mono text-xs text-muted">
+              <span data-f="rating"></span> · <span data-f="record"></span> <span data-f="provisional" hidden class="font-sans font-semibold tracking-[0.08em] uppercase">· Provisional</span>
+            </p>
+            <div class="mt-5 flex flex-wrap items-center gap-2.5">
+              <a data-f="arena" class:list={[BUTTON, 'px-4 py-2 text-sm bg-accent text-accent-ink hover:brightness-110']}>
+                <svg viewBox="0 0 24 24" class="h-4 w-4" aria-hidden="true"><path d="M8 5.5 19 12 8 18.5V5.5Z" fill="currentColor"></path></svg>
+                Play in the Arena
+              </a>
+              <a data-f="github" target="_blank" rel="noopener noreferrer" class:list={[BUTTON, 'px-4 py-2 text-sm border border-line-strong text-muted hover:border-accent hover:text-accent']}>
+                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6-5 6 5 6M15 6l5 6-5 6"></path></svg>
+                Source
+              </a>
+            </div>
+          </li>
+        </template>
+      ))}
+
+      {ROW_VARIANTS.map((variant) => (
+        <template data-row={variant.key}>
+          <tr class="reveal-fade" style={`--rule:${variant.rule}`}>
+            <td data-label="Rank" class:list={[CELL, 'md:pl-5']}>
+              <div class="flex items-center gap-2">
+                <span class:list={['inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-display text-lg font-semibold', variant.badge]} data-f="place"></span>
+                <span data-f="tied" hidden class="text-[0.62rem] font-semibold tracking-[0.09em] text-subtle uppercase">tied</span>
+              </div>
+            </td>
+            <td data-label="Program" class={CELL}>
+              <div class="font-display text-base leading-snug font-semibold text-fg" data-f="title"></div>
+              <div class="mt-0.5 text-xs text-subtle" data-f="version"></div>
+            </td>
+            <td data-label="Model" class={CELL}>
+              <div class="text-sm text-muted" data-f="model"></div>
+              <div class="mt-0.5 text-xs text-subtle" data-f="modelPlatform" hidden></div>
+            </td>
+            <td data-label="Code agent" class={CELL}><span class="font-mono text-[0.8rem] text-muted" data-f="codeAgent"></span></td>
+            <td data-label="Rating" class={CELL}>
+              <span class="font-display text-base font-semibold text-fg" data-f="rating"></span>
+              <span data-f="provisional" hidden class="ml-1.5 text-[0.62rem] font-semibold tracking-[0.09em] text-subtle uppercase">Provisional</span>
+            </td>
+            <td data-label="Matches" class={CELL}><span class="text-sm text-muted" data-f="matches"></span></td>
+            <td data-label="Games W–L–D" class={CELL}><span class="font-mono text-sm text-muted" data-f="record"></span></td>
+            <td data-label="GitHub" class={CELL}>
+              <a data-f="github" target="_blank" rel="noopener noreferrer" class:list={[BUTTON, 'px-3 py-1.5 text-xs border border-line-strong text-muted hover:border-accent hover:text-accent']}>Source</a>
+              <span data-f="github-none" hidden class="text-sm text-subtle">—</span>
+            </td>
+            <td data-label="Play in the Arena" data-span class={CELL}>
+              <a data-f="arena" class:list={[BUTTON, 'px-3 py-1.5 text-xs bg-accent text-accent-ink hover:brightness-110']}>Play</a>
+            </td>
+          </tr>
+        </template>
+      ))}
+    </section>
+
+    <ContentSection id="how-ratings-work" title="How ratings work">
+      <p>
+        A program joins at <span class="font-semibold text-fg">1000 Elo</span> the moment it is
+        published — after it passes admission, the behaviour checks, and a two-game test round
+        against the reference program on the <a href="arena/upload/" class="font-semibold text-accent underline-offset-4 hover:underline">Upload page</a>.
+        One rating belongs to one exact build: a new version is a new entry, identified by its
+        SHA-256, and starts again at 1000.
+      </p>
+      <p>
+        Only <span class="font-semibold text-fg">rated matches</span> move a rating: two different
+        published programs at the standard settings — hard, 20,000 nodes, 5 seconds per move.
+        A match is always two games, colours swapped, and it counts as one Elo update with K = 32
+        per game against the expected score over both games. Win both games against an equal and
+        you gain 32 points; draw the match and nothing moves. Any other settings make a friendly
+        match, which is recorded nowhere.
+      </p>
+      <p>
+        Matches are played in visitors' browsers and reported to the server, which replays both
+        games move by move before recording anything. A match containing a forfeit — which the
+        moves alone cannot prove — or between two programs from the same uploader is kept on
+        record as <span class="font-semibold text-fg">unrated</span> and changes no ratings.
+        A rating is marked <span class="font-semibold text-fg">Provisional</span> until a program
+        has played five rated matches.
+      </p>
+    </ContentSection>
 
     <GameRules />
 
     <ContentSection id="reading-the-table" title="Reading the table">
       <p>
-        {rankingNote}{' '}
-        Rows marked <span class="font-semibold text-fg">tied</span> are level with one another, not
-        ordered within the tie — the alphabetical order shown inside a tie carries no meaning.
+        <span data-lb-note>Places follow standard competition ranking.</span> Programs marked
+        <span class="font-semibold text-fg">tied</span> are level with one another, not ordered
+        within the tie.
       </p>
-
       <p>
-        <span class="font-semibold text-fg">Coding harness</span> names the agent that drove the
-        model, and <span class="font-semibold text-fg">Effort</span> the reasoning tier it ran at.
-        Both materially affect the result, so a row should be read as one configuration of a model
-        rather than as a verdict on the model at every setting.
+        <span class="font-semibold text-fg">Model</span>, <span class="font-semibold text-fg">Code agent</span> and the
+        smaller <span class="font-semibold text-fg">Model platform</span> line under the model are
+        the names each program reports for itself: the model that wrote it, the harness that
+        drove that model, and the service or provider the model ran through (`official` means
+        its maker's own service; a missing line means the program declared none). They describe
+        the program's authorship, not a seal of approval.
+        <span class="font-semibold text-fg">Matches</span> counts rated two-game matches, while
+        <span class="font-semibold text-fg">Games W–L–D</span> counts the individual games inside them.
       </p>
-
       <p>
-        Each <span class="font-semibold text-fg">Play</span> link opens that model's deployed build in
-        a new tab, and each <span class="font-semibold text-fg">Source</span> link opens the
-        corresponding GitHub repository. All twelve destinations are third-party pages published from
-        this benchmark's own runs.
+        Every <span class="font-semibold text-fg">Play in the Arena</span> link opens the Arena
+        with that program in the left seat; pick an opponent and, at the standard settings, the
+        match you play is rated and moves both programs here. Each
+        <span class="font-semibold text-fg">Source</span> link opens the program's GitHub repository in a new tab.
       </p>
     </ContentSection>
 
-    <SiteFooter isoDate={SNAPSHOT_DATE} />
+    <SiteFooter />
   </div>
+
+  <script>
+    import {
+      arenaHref,
+      buildEloRanking,
+      githubHref,
+      matchesText,
+      modelLine,
+      parseLeaderboard,
+      podiumPrograms,
+      programCountText,
+      versionText,
+      type RankedProgram,
+    } from '../lib/elo-ranking';
+    import { formatRecord } from '../lib/format';
+    import { describeRanking } from '../lib/ties';
+
+    const root = document.querySelector<HTMLElement>('[data-lb]');
+
+    if (root) {
+      const one = <T extends Element>(scope: ParentNode, selector: string): T => {
+        const node = scope.querySelector<T>(selector);
+        if (!node) throw new Error(`leaderboard markup is missing ${selector}`);
+        return node;
+      };
+      const setText = (scope: ParentNode, field: string, text: string): void => {
+        one(scope, `[data-f="${field}"]`).textContent = text;
+      };
+      const setShown = (scope: ParentNode, field: string, shown: boolean): void => {
+        one<HTMLElement>(scope, `[data-f="${field}"]`).hidden = !shown;
+      };
+      const clone = (selector: string): DocumentFragment =>
+        one<HTMLTemplateElement>(root, selector).content.cloneNode(true) as DocumentFragment;
+
+      const fillLinks = (scope: ParentNode, program: RankedProgram): void => {
+        const arena = one<HTMLAnchorElement>(scope, '[data-f="arena"]');
+        arena.href = arenaHref(program.sha256);
+        arena.setAttribute('aria-label', `Play ${program.title} in the Arena`);
+        const github = one<HTMLAnchorElement>(scope, '[data-f="github"]');
+        const href = githubHref(program.githubUrl);
+        if (href) {
+          github.href = href;
+          github.setAttribute('aria-label', `View the source code for ${program.title} on GitHub (opens in a new tab)`);
+        } else {
+          github.hidden = true;
+          scope.querySelector<HTMLElement>('[data-f="github-none"]')?.removeAttribute('hidden');
+        }
+      };
+
+      const buildCard = (program: RankedProgram, index: number): DocumentFragment => {
+        const card = clone(`template[data-podium="${Math.min(program.place, 3)}"]`);
+        const li = one<HTMLElement>(card, 'li');
+        li.style.setProperty('--i', String(index));
+        li.dataset['sha'] = program.sha256;
+        setShown(card, 'tied', program.isTied);
+        setText(card, 'title', program.title);
+        setText(card, 'subline', `${modelLine(program)} · ${versionText(program.gameVersion)}`);
+        setText(card, 'rating', `Elo ${program.displayRating}`);
+        setText(card, 'record', `${matchesText(program.ratedMatches)} · ${formatRecord(program)}`);
+        setShown(card, 'provisional', program.provisional);
+        fillLinks(card, program);
+        return card;
+      };
+
+      const buildRow = (program: RankedProgram, index: number): DocumentFragment => {
+        const row = clone(`template[data-row="${program.medal ?? 'none'}"]`);
+        const tr = one<HTMLElement>(row, 'tr');
+        // Offset past the podium cards, capped so a long table does not stagger forever.
+        tr.style.setProperty('--i', String(Math.min(index + 3, 14)));
+        tr.dataset['sha'] = program.sha256;
+        setText(row, 'place', String(program.place));
+        setShown(row, 'tied', program.isTied);
+        setText(row, 'title', program.title);
+        setText(row, 'version', versionText(program.gameVersion));
+        setText(row, 'model', program.model);
+        setText(row, 'modelPlatform', program.modelPlatform);
+        setShown(row, 'modelPlatform', program.modelPlatform !== '');
+        setText(row, 'codeAgent', program.codeAgent);
+        setText(row, 'rating', String(program.displayRating));
+        setShown(row, 'provisional', program.provisional);
+        setText(row, 'matches', String(program.ratedMatches));
+        setText(row, 'record', formatRecord(program));
+        fillLinks(row, program);
+        return row;
+      };
+
+      const status = one<HTMLElement>(root, '[data-lb-status]');
+      const showOnly = (state: 'loading' | 'ready' | 'empty' | 'error'): void => {
+        root.dataset['state'] = state;
+        status.hidden = state !== 'loading';
+        one<HTMLElement>(root, '[data-lb-ready]').hidden = state !== 'ready';
+        one<HTMLElement>(root, '[data-lb-empty]').hidden = state !== 'empty';
+        one<HTMLElement>(root, '[data-lb-error]').hidden = state !== 'error';
+      };
+
+      const load = async (): Promise<void> => {
+        showOnly('loading');
+        status.textContent = 'Loading standings…';
+        try {
+          const response = await fetch('api/leaderboard', { cache: 'no-cache' });
+          if (!response.ok) throw new Error(`The leaderboard service answered HTTP ${response.status}.`);
+          const { entries, issues } = parseLeaderboard(await response.json());
+          if (!entries) throw new Error(issues.join(' ') || 'The leaderboard answer could not be read.');
+          const ranked = buildEloRanking(entries);
+          for (const node of document.querySelectorAll('[data-lb-count]')) node.textContent = programCountText(ranked.length);
+          for (const node of document.querySelectorAll('[data-lb-note]')) node.textContent = describeRanking(ranked);
+          if (ranked.length === 0) {
+            showOnly('empty');
+            return;
+          }
+          one(root, '[data-lb-podium]').replaceChildren(...podiumPrograms(ranked).map(buildCard));
+          one(root, '[data-lb-rows]').replaceChildren(...ranked.map(buildRow));
+          showOnly('ready');
+        } catch (err) {
+          one(root, '[data-lb-error-detail]').textContent = err instanceof Error ? err.message : String(err);
+          showOnly('error');
+        }
+      };
+
+      one(root, '[data-lb-retry]').addEventListener('click', () => void load());
+      void load();
+    }
+  </script>
 </BaseLayout>

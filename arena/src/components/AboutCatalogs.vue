@@ -12,15 +12,17 @@ import { SECTION_TITLE } from '../ui/classes';
       <div class="space-y-4">
         <h3 class="font-display text-lg font-semibold text-fg">Two catalogs</h3>
         <p>
-          <span class="font-semibold text-fg">On this device</span> holds the files you upload. They are checked, saved in this browser
-          by SHA-256 and usable at once — but only here. Uploading the same bytes again reuses the entry; a changed build is a new entry
-          even if its title and version are the same. Clearing site data removes them.
+          Every upload is <span class="font-semibold text-fg">published</span>: checked here, tested in two games against the
+          reference program, then added to the shared catalog for everyone, starting at an Elo rating of 1000. If any step fails,
+          nothing is stored. The same bytes again reuse the entry; a changed build is a new entry even if its title and version are
+          the same. <span class="font-semibold text-fg">On this device</span> only lists programs imported before publishing
+          existed; they still play, but only in friendly (unrated) matches.
         </p>
         <p>
           The <span class="font-semibold text-fg">public catalog</span> is the Arena’s shared database: every program in it is stored
           under its SHA-256 and listed with that hash, and every download is verified against it. A maintainer adds programs with
           <code class="font-mono text-xs">npm run catalog:add -- path/to/file.wasm</code>, which runs the same checks; one of them is the
-          reference program that conformance runs play against. Files uploaded on this page stay on this device.
+          reference program that every upload test and conformance run plays against.
         </p>
       </div>
       <div class="space-y-4">

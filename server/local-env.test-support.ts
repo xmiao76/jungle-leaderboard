@@ -36,8 +36,10 @@ export async function startLocalEnv(): Promise<LocalEnv> {
   return {
     env: proxy.env,
     async reset() {
-      await proxy.env.DB.prepare('DELETE FROM entrants').run();
-      await proxy.env.DB.prepare('DELETE FROM upload_quota').run();
+      // Children first: matches reference entrants.
+      for (const table of ['rating_changes', 'matches', 'report_quota', 'entrants', 'upload_quota']) {
+        await proxy.env.DB.prepare(`DELETE FROM ${table}`).run();
+      }
       const listed = await proxy.env.ENTRANTS.list();
       if (listed.objects.length > 0) await proxy.env.ENTRANTS.delete(listed.objects.map((o) => o.key));
     },

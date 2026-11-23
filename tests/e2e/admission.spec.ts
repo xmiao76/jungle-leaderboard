@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { fileURLToPath } from 'node:url';
 
 const fixture = (name: string) => fileURLToPath(new URL(`../../arena/test-fixtures/${name}`, import.meta.url));
@@ -18,6 +18,7 @@ test('admits a newly built single-file component and shows its own frames', asyn
     expect.arrayContaining(['admission', 'render-does-not-change-choice', 'two-instances-isolated', 'flip-changes-view', 'match-as-red', 'match-as-blue', 'match-self']),
   );
   expect(body.metadata.title).toBe('Arena test entrant');
+  expect(body.metadata.modelPlatform).toBe('official');
   expect(body.metadata.rulesDigest).toBe('a457bbc009e975a9eafe5ff1f8fa40ca2548f2a689b121c8c4ed99dd0f3fdc57');
   // The canvas holds guest pixels: sample the frame and confirm it is not blank.
   const painted = await page.locator('#frame-0').evaluate((c: HTMLCanvasElement) => {
@@ -27,6 +28,13 @@ test('admits a newly built single-file component and shows its own frames', asyn
     return nonZero;
   });
   expect(painted).toBeGreaterThan(100);
+});
+
+test('admits a legacy component whose metadata predates model-platform', async ({ page }) => {
+  // legacy-metadata.wasm is a preserved pre-field build (9-field metadata record).
+  const { status, body } = await check(page, fixture('legacy-metadata.wasm'));
+  expect(status, JSON.stringify(body)).toBe('passed');
+  expect(body.metadata.modelPlatform).toBe('');
 });
 
 for (const [file, stage, reason] of [

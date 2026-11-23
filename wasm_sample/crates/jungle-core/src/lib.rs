@@ -16,6 +16,7 @@ pub mod identity {
     pub const GAME_VERSION: &str = "1.1.0";
     pub const MODEL: &str = "Claude-Opus-5.5";
     pub const CODE_AGENT: &str = "ClaudeCode";
+    pub const MODEL_PLATFORM: &str = "official";
     pub const GITHUB_URL: &str = "https://github.com/xmiao76/jungle-leaderboard";
     pub const ENGINE_VERSION: &str = "jungle-core 1.1.0 (alpha-beta, iterative deepening, repetition-aware)";
     pub const RUNTIME: &str = "Rust 1.94.1, wasm32-unknown-unknown, wit-bindgen 0.63.0";

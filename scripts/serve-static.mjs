@@ -50,11 +50,16 @@ export function startStaticServer({ dir, prefix = '/', port = 0, api = null }) {
       return;
     }
     let path = decodeURIComponent(url.pathname);
-    if (!path.startsWith(base)) {
+    if (path.startsWith(base)) {
+      path = path.slice(base.length);
+    } else if (path.startsWith('/_astro/')) {
+      // Astro links its bundled CSS and scripts from the site root (/_astro/…), not relative to
+      // the page, so under a test prefix they are served from the directory root as well.
+      path = path.slice(1);
+    } else {
       res.writeHead(404).end('outside prefix');
       return;
     }
-    path = path.slice(base.length);
     let file = normalize(join(root, path));
     if (file !== root && !file.startsWith(root + sep)) {
       res.writeHead(403).end();

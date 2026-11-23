@@ -3,8 +3,12 @@
  * drift from the data. Standard competition ranking means a group of k entries
  * sharing a place consumes the k-1 places below it, and those are not awarded.
  */
-import type { ModelEntry } from '../data/models';
 import { capitalize, countWord, ordinalWord } from './format';
+
+/** Anything carrying a competition place (a `RankedProgram`, in practice). */
+export interface Placed {
+  readonly place: number;
+}
 
 export interface TieGroup {
   readonly place: number;
@@ -13,7 +17,7 @@ export interface TieGroup {
   readonly skippedPlaces: readonly number[];
 }
 
-export function findTieGroups(entries: readonly ModelEntry[]): readonly TieGroup[] {
+export function findTieGroups(entries: readonly Placed[]): readonly TieGroup[] {
   const counts = new Map<number, number>();
   for (const { place } of entries) {
     counts.set(place, (counts.get(place) ?? 0) + 1);
@@ -41,14 +45,14 @@ function describeGroup(group: TieGroup): string {
       ? `so no ${skipped[0]} place is awarded`
       : `so ${joinWords(skipped)} places are not awarded`;
 
-  return `${capitalize(countWord(group.count))} models share ${ordinalWord(group.place)} place, ${consequence}.`;
+  return `${capitalize(countWord(group.count))} programs share ${ordinalWord(group.place)} place, ${consequence}.`;
 }
 
 /**
  * One sentence per tied place, or `null` when every place is unique — callers
  * should omit the copy entirely in that case rather than print an empty string.
  */
-export function describeTies(entries: readonly ModelEntry[]): string | null {
+export function describeTies(entries: readonly Placed[]): string | null {
   const groups = findTieGroups(entries);
   if (groups.length === 0) return null;
   return groups.map(describeGroup).join(' ');
@@ -61,7 +65,7 @@ const RANKING_PREFACE = 'Places follow standard competition ranking.';
  * caption and the "Reading the table" section use this, so the two cannot
  * disagree with each other or with the data.
  */
-export function describeRanking(entries: readonly ModelEntry[]): string {
+export function describeRanking(entries: readonly Placed[]): string {
   const ties = describeTies(entries);
   return ties ? `${RANKING_PREFACE} ${ties}` : RANKING_PREFACE;
 }

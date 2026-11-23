@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { componentEmbed, componentNew, print } from '@bytecodealliance/jco-transpile/wasm-tools';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { CANONICAL_CONTRACT, contractIssues, DISPLAY_INTERFACE, GAME_INTERFACE } from './contract';
+import { CANONICAL_CONTRACT, contractIssues, DISPLAY_INTERFACE, GAME_INTERFACE, LEGACY_METADATA_SIGNATURES } from './contract';
 import { extractContract, type ContractShape } from './signature';
 import { isComponentBinary, isCoreModuleBinary, MalformedComponentError, stripCoreModules } from './strip';
 
@@ -48,6 +48,22 @@ describe('contractIssues on built entrants', () => {
   it('accepts the test entrant', async () => {
     const bytes = fixture('test-entrant-1.1.0.wasm');
     expect(contractIssues(await contractOf(bytes))).toEqual([]);
+  });
+
+  it('accepts a legacy binary whose metadata predates model-platform', async () => {
+    // legacy-metadata.wasm is a preserved pre-field build (test-entrant 1.0.0, 9-field record).
+    expect(contractIssues(await contractOf(fixture('legacy-metadata.wasm')))).toEqual([]);
+  });
+
+  it('rejects a mixed legacy/canonical metadata pair', () => {
+    const game = CANONICAL_CONTRACT.exports[GAME_INTERFACE]!;
+    const mixed: ContractShape = {
+      ...CANONICAL_CONTRACT,
+      exports: { [GAME_INTERFACE]: { ...game, info: LEGACY_METADATA_SIGNATURES['info']! } },
+    };
+    const issues = contractIssues(mixed);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('"info" has the wrong type');
   });
 
   it('accepts behaviourally broken but type-correct entrants (those fail later, at run time)', async () => {

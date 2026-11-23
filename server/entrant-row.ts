@@ -13,6 +13,7 @@ export interface EntrantRow {
   readonly game_version: string;
   readonly model: string;
   readonly code_agent: string;
+  readonly model_platform: string;
   readonly github_url: string;
   readonly engine_version: string;
   readonly runtime: string;
@@ -35,7 +36,7 @@ export const binaryKey = (sha256: string): string => `${sha256}.wasm`;
 
 /** The columns a `ListedRow` selects: never the stored report or the uploader hash. */
 export const LISTED_COLUMNS = [
-  'sha256', 'size', 'title', 'game_version', 'model', 'code_agent', 'github_url', 'engine_version', 'runtime',
+  'sha256', 'size', 'title', 'game_version', 'model', 'code_agent', 'model_platform', 'github_url', 'engine_version', 'runtime',
   'rules_id', 'rules_digest', 'provenance', 'credits', 'is_reference', 'created_at',
 ].join(', ');
 
@@ -63,6 +64,7 @@ export function rowToPublicEntry(row: ListedRow): PublicEntry {
       gameVersion: row.game_version,
       model: row.model,
       codeAgent: row.code_agent,
+      modelPlatform: row.model_platform,
       githubUrl: row.github_url,
       engineVersion: row.engine_version,
       runtime: row.runtime,

@@ -44,7 +44,7 @@ const originLabel = (origin: 'public' | 'device') => (origin === 'public' ? 'Pub
         <span :class="LABEL">Version (each build is identified by its hash)</span>
         <select :class="FIELD" :value="state.selection[seat] ?? ''" :disabled="busy || versions.length === 0" :data-testid="`version-${seat}`" @change="chooseVersion">
           <option v-for="v in versions" :key="v.sha256" :value="v.sha256">
-            v{{ v.metadata.gameVersion }} · {{ shortHash(v.sha256) }} · {{ originLabel(v.origin) }}
+            v{{ v.metadata.gameVersion }} · {{ shortHash(v.sha256) }} · {{ originLabel(v.origin) }}<template v-if="v.metadata.modelPlatform"> · {{ v.metadata.modelPlatform }}</template>
           </option>
         </select>
       </label>
@@ -62,6 +62,10 @@ const originLabel = (origin: 'public' | 'device') => (origin === 'public' ? 'Pub
       <dd>{{ selected.metadata.model }}</dd>
       <dt class="text-subtle">Code agent</dt>
       <dd>{{ selected.metadata.codeAgent }}</dd>
+      <template v-if="selected.metadata.modelPlatform">
+        <dt class="text-subtle">Model platform</dt>
+        <dd>{{ selected.metadata.modelPlatform }}</dd>
+      </template>
       <template v-if="selected.metadata.githubUrl">
         <dt class="text-subtle">GitHub</dt>
         <dd><a :href="selected.metadata.githubUrl" target="_blank" rel="noreferrer noopener" class="text-accent underline underline-offset-2 break-all">{{ selected.metadata.githubUrl }}</a></dd>

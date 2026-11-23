@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import {
   canvasFingerprint,
   chooseVersion,
@@ -11,6 +11,8 @@ import {
   TEST_ENTRANT,
   uploadTestEntrant,
   waitForMatchResult,
+  SAMPLE_SHA,
+  shaOf,
 } from './arena';
 
 test.describe.configure({ mode: 'serial' });
@@ -79,6 +81,8 @@ test('a match is two games, colours swapped so each side moves first once, then 
   expect(await scrolls()).toBe(false);
   await page.screenshot({ path: test.info().outputPath('match-result-portrait.png'), animations: 'disabled' });
   await page.setViewportSize(viewport);
+  // The helper made this a friendly match: recorded nowhere, ratings unchanged.
+  await expect(page.getByTestId('match-rating')).toHaveAttribute('data-state', 'friendly');
   // Escape closes it; the page behind is usable again.
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
@@ -171,4 +175,28 @@ test('reopens a saved replay after a reload with the original renderers', async 
   const end = await canvasFingerprint(page, 'replay-canvas-left');
   await page.getByTestId('replay-seek').fill('2');
   await expect.poll(() => canvasFingerprint(page, 'replay-canvas-left')).not.toBe(end);
+});
+
+test('a rated match between two published programs changes both Elo ratings', async ({ page }) => {
+  test.setTimeout(240_000);
+  // Both programs are published in the e2e catalog, and the default settings are the rated ones.
+  await page.goto(`arena/?left=${shaOf('test-entrant-1.1.0.wasm')}&right=${SAMPLE_SHA}`);
+  await expect(page.locator('[data-page="arena"][data-booted="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('rated-badge')).toHaveText('Rated match');
+  await setFastPlay(page);
+  await startMatch(page);
+  await expect(page.getByTestId('play-rated')).toHaveText('Rated');
+
+  await expect(page.getByTestId('match-result-dialog')).toBeVisible({ timeout: 170_000 });
+  await expect(page.getByTestId('match-rating')).toHaveAttribute('data-state', 'counted', { timeout: 30_000 });
+  const change = async (seat: 'left' | 'right') => {
+    const text = (await page.getByTestId(`match-rating-${seat}`).textContent()) ?? '';
+    const match = /^Elo (\d+) → (\d+) \(([+−±])(\d+)\)$/.exec(text.trim());
+    expect(match, text).not.toBeNull();
+    return Number(match![2]) - Number(match![1]);
+  };
+  const [left, right] = [await change('left'), await change('right')];
+  // Equal and opposite (whole-point display may round the halves apart by one).
+  expect(Math.abs(left + right)).toBeLessThanOrEqual(1);
+  expect(left).not.toBe(0);
 });

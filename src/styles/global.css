@@ -105,7 +105,7 @@
   background-color: var(--c-row-hover);
 }
 
-/* `--rule` is set per row by ModelRow.astro: medal colour for the top three,
+/* `--rule` is baked into each row template in index.astro: medal colour for the top three,
    jade for everyone else. One variable drives the desktop rule and the mobile
    card edge below. */
 @media (min-width: 48rem) {

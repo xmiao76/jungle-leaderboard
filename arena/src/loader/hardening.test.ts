@@ -69,6 +69,24 @@ describe('metadata identity', () => {
     expect(checkMetadata(without).issues.join()).toMatch(/githubUrl/);
   });
 
+  it('keeps a declared model platform, sanitized like other text', () => {
+    const check = checkMetadata({ ...METADATA, modelPlatform: ' Some​Provider ' });
+    expect(check.issues).toEqual([]);
+    expect(check.metadata?.modelPlatform).toBe('SomeProvider');
+  });
+
+  it('normalizes an absent or empty model platform to empty, with no issue', () => {
+    const { modelPlatform: _dropped, ...legacy } = METADATA;
+    const absent = checkMetadata(legacy);
+    expect(absent.issues).toEqual([]);
+    expect(absent.metadata?.modelPlatform).toBe('');
+    expect(checkMetadata({ ...METADATA, modelPlatform: '' }).issues).toEqual([]);
+  });
+
+  it('rejects a non-string model platform', () => {
+    expect(checkMetadata({ ...METADATA, modelPlatform: 42 }).issues.join()).toMatch(/modelPlatform is not a string/);
+  });
+
   it('strips zero-width and bidi characters from displayed text', () => {
     const check = checkMetadata({ ...METADATA, title: 'Tit​le‮ ' });
     expect(check.metadata?.title).toBe('Title');

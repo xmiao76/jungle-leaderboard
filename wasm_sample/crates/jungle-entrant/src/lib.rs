@@ -128,6 +128,7 @@ impl wit::Guest for Entrant {
             game_version: identity::GAME_VERSION.into(),
             model: identity::MODEL.into(),
             code_agent: identity::CODE_AGENT.into(),
+            model_platform: identity::MODEL_PLATFORM.into(),
             github_url: identity::GITHUB_URL.into(),
             engine_version: identity::ENGINE_VERSION.into(),
             runtime: identity::RUNTIME.into(),

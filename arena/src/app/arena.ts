@@ -5,9 +5,11 @@
 import { reactive, toRaw, watch } from 'vue';
 import { MatchAudio } from '../audio/sfx';
 import { fetchPublicBinary, fetchPublicManifest, groupByTitle, mergeCatalog, type CatalogEntry, type CatalogGroup } from '../catalog/catalog';
+import { publishEntrant } from '../catalog/publish';
+import { ROUND_STAGES, runUploadRound, type RoundStage } from '../conformance/round';
 import type { Frame } from '../loader/frame';
 import { sha256Hex } from '../loader/hash';
-import { importBinary, type ImportOutcome, type ImportStage } from '../loader/import-service';
+import { importBinary, IMPORT_STAGES, type ImportOutcome, type ImportStage } from '../loader/import-service';
 import { DEADLINES, DEFAULT_NODE_BUDGET, LOADER_VERSION, MAX_UPLOAD_BYTES } from '../loader/limits';
 import { MatchController, type AnimationPlan, type MatchEntrant, type MatchResult, type MatchView } from '../match/controller';
 import {
@@ -20,18 +22,21 @@ import {
   type SeriesGame,
   type SeriesSummary,
 } from '../match/series';
+import { RATED_SETTINGS, ratedEligibility, type RatedEligibility } from '../match/rated';
+import { buildMatchReport, postMatchReport, type ReportOutcome } from '../match/report';
 import { SEATS, type Seat } from '../protocol/messages';
 import { initialSnapshot, RULES_DIGEST, RULES_ID } from '../referee';
-import { opponent, type Level, type Side } from '../referee/types';
+import { opponent, type Level, type Metadata, type PlyMove, type Side } from '../referee/types';
 import { REPLAY_FORMAT, withPly, withResult, type ReplayV1 } from '../replay/schema';
 import { MemoryStore, openArenaStore, ResilientStore, type ArenaStore } from '../storage/db';
 import { createLoaderWorker, createRefereeWorker, createSeatWorker } from '../workers/factories';
-import { arenaUrl, catalogBase, parsePlayQuery, playUrl, selectionFromQuery, type PlayConfig, type Speed } from './paths';
+import { arenaUrl, catalogBase, catalogUploadUrl, matchesUrl, parsePlayQuery, playUrl, selectionFromQuery, type PlayConfig, type Speed } from './paths';
+import { turnstileToken } from './turnstile';
 import { LoaderClient, realClock } from '../workers/rpc';
 
 export const ARENA_VERSION = '1.0.0';
-/** Matches start at full strength: the brief requires `hard` to be each program's strongest play. */
-export const DEFAULT_DIFFICULTY: Level = 'hard';
+/** Matches start at full strength (the brief's `hard`), the rated standard (match/rated.ts). */
+export const DEFAULT_DIFFICULTY: Level = RATED_SETTINGS.difficulty;
 
 export type { Speed } from './paths';
 export const SPEEDS: Readonly<Record<Speed, AnimationPlan>> = {
@@ -59,7 +64,13 @@ export interface SeriesView {
   details: string[];
   /** While game 1's result is shown: when game 2 starts (epoch ms). */
   nextGameAt: number | null;
+  /** Each game's moves, for the result report. */
+  moves: PlyMove[][];
+  /** What became of the result: friendly, being reported, rated, or why not. */
+  rating: RatingView | null;
 }
+
+export type RatingView = { readonly state: 'friendly'; readonly reason: string } | { readonly state: 'reporting' } | ReportOutcome;
 
 export interface ArenaState {
   booted: boolean;
@@ -205,34 +216,76 @@ export async function boot(): Promise<void> {
 
 // ---- Import ---------------------------------------------------------------------------------
 
+/** Every step of an upload, in order: admission, the upload round, then publishing. */
+export type UploadStage = ImportStage | RoundStage | 'publish';
+export const UPLOAD_STAGES: readonly UploadStage[] = [...IMPORT_STAGES, ...ROUND_STAGES, 'publish'];
+
+export type UploadOutcome =
+  | Extract<ImportOutcome, { ok: true }>
+  | {
+      readonly ok: false;
+      readonly stage: UploadStage;
+      readonly sha256: string | null;
+      readonly reasons: readonly string[];
+      readonly metadata: Metadata | null;
+    };
+
 export interface ImportResult {
-  readonly outcome: ImportOutcome;
+  readonly outcome: UploadOutcome;
+  /** These exact bytes were already published. */
   readonly reused: boolean;
 }
 
-export async function importFile(file: File, onStage: (stage: ImportStage) => void): Promise<ImportResult> {
+export interface UploadProgress {
+  onStage(stage: UploadStage): void;
+  onPly(stage: RoundStage, plies: number): void;
+}
+
+/**
+ * Upload = admission → the upload round (behaviour checks + two games against the reference)
+ * → Turnstile → publish to the shared catalog. Nothing is stored anywhere unless every step
+ * passes and the server accepts it; afterwards only the transpiled code is cached here.
+ */
+export async function importFile(file: File, progress: UploadProgress): Promise<ImportResult> {
   // Refuse oversized files before reading them into memory at all.
   if (file.size > MAX_UPLOAD_BYTES) {
-    onStage('size');
+    progress.onStage('size');
     const reason = `The file is ${(file.size / 1048576).toFixed(1)} MiB; the limit is ${MAX_UPLOAD_BYTES / 1048576} MiB.`;
     return { outcome: { ok: false, stage: 'size', sha256: null, reasons: [reason], metadata: null }, reused: false };
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const outcome = await importBinary(bytes, {
+  const admitted = await importBinary(bytes, {
     loader,
     seatFactory: createSeatWorker,
-    onStage,
+    onStage: (stage) => progress.onStage(stage),
     cachedArtifact: async (sha) => store.getTranspiled(sha, LOADER_VERSION),
   });
-  if (!outcome.ok) return { outcome, reused: false };
-  const existing = await store.getPackage(outcome.sha256);
-  if (!existing) {
-    await store.putPackage({ sha256: outcome.sha256, size: outcome.size, fileName: file.name, metadata: outcome.metadata, importedAt: new Date().toISOString(), bytes });
+  if (!admitted.ok) return { outcome: admitted, reused: false };
+  const refuse = (stage: UploadStage, reasons: readonly string[]): ImportResult => ({
+    outcome: { ok: false, stage, sha256: admitted.sha256, reasons, metadata: admitted.metadata },
+    reused: false,
+  });
+
+  const round = await runUploadRound(admitted.sha256, admitted.metadata, admitted.artifact, progress);
+  if (!round.ok) return refuse(round.stage, round.reasons);
+
+  progress.onStage('publish');
+  let token: string;
+  try {
+    token = await turnstileToken('upload');
+  } catch (err) {
+    return refuse('publish', [err instanceof Error ? err.message : String(err)]);
   }
-  await store.putTranspiled(outcome.sha256, LOADER_VERSION, outcome.artifact);
+  const published = await publishEntrant(
+    { bytes, sha256: admitted.sha256, metadata: admitted.metadata, report: round.report, turnstileToken: token },
+    catalogUploadUrl(),
+  );
+  if (!published.ok) return refuse('publish', published.reasons);
+
+  await store.putTranspiled(admitted.sha256, LOADER_VERSION, admitted.artifact);
   state.storageNotice = store.unavailableReason;
   await refreshCatalog();
-  return { outcome, reused: existing !== null };
+  return { outcome: admitted, reused: published.existing };
 }
 
 // ---- Seat selection across pages -----------------------------------------------------------
@@ -375,6 +428,8 @@ export async function startMatch(): Promise<void> {
     text: null,
     details: [],
     nextGameAt: null,
+    moves: [[], []],
+    rating: null,
   };
   await startGame(id, 1, { left, right }, settings);
 }
@@ -476,7 +531,7 @@ async function startGame(
           const title = f.reason === 'timeout' ? 'An entrant ran out of time' : f.reason === 'trap' ? 'An entrant crashed' : 'An entrant proposed an invalid move';
           notify('warning', title, `${f.side} (${f.seat} seat) forfeited: ${f.message}`);
         }
-        gameEnded(seriesId, game, result, picked, settings);
+        gameEnded(seriesId, game, result, picked, settings, snapshot?.history ?? []);
       },
     },
   });
@@ -487,7 +542,7 @@ async function startGame(
   if (view.phase === 'failed') {
     notify('error', 'An entrant failed to initialize', view.failure ?? 'Unknown failure.');
     // No board result: the match cannot be completed.
-    gameEnded(seriesId, game, { kind: 'system-error', message: view.failure ?? 'An entrant failed to initialize.', endRev: 0 }, picked, settings);
+    gameEnded(seriesId, game, { kind: 'system-error', message: view.failure ?? 'An entrant failed to initialize.', endRev: 0 }, picked, settings, []);
     return;
   }
   if (!settings.beginPaused) created.play();
@@ -500,10 +555,12 @@ function gameEnded(
   result: MatchResult,
   picked: Readonly<Record<Seat, CatalogEntry>>,
   settings: ArenaState['settings'],
+  moves: readonly PlyMove[],
 ): void {
   const series = state.series;
   if (!series || series.id !== seriesId || series.games[game - 1]!.result) return;
   series.games[game - 1] = { ...series.games[game - 1]!, result: JSON.parse(JSON.stringify(result)) as MatchResult };
+  series.moves[game - 1] = moves.map((m) => ({ src: m.src, dst: m.dst }));
   if (game === 1 && result.kind !== 'system-error') {
     const delay = BETWEEN_GAMES_MS[state.settings.speed];
     series.nextGameAt = Date.now() + delay;
@@ -521,6 +578,45 @@ function gameEnded(
   series.details = played.map(describeSeriesGame);
   // The play page shows the full result in MatchResultDialog; this line is for screen readers.
   state.announcement = series.text;
+  void reportMatch(seriesId, picked, settings);
+}
+
+/** Whether a match between these catalog entries, at these settings, changes Elo ratings. */
+export function matchEligibility(left: CatalogEntry | null, right: CatalogEntry | null, settings: Pick<ArenaState['settings'], 'difficulty' | 'nodeBudget' | 'thinkDeadlineMs'>): RatedEligibility {
+  if (!left || !right) return { rated: false, reason: 'Pick a program for each seat.' };
+  return ratedEligibility({ left: left.sha256, right: right.sha256, leftPublished: left.origin === 'public', rightPublished: right.origin === 'public', settings });
+}
+
+/**
+ * Report a finished match to the Arena: rated ones change both Elo ratings, the rest are friendly
+ * and stay local. Never blocks the result display; the outcome appears in MatchResultDialog.
+ */
+async function reportMatch(seriesId: string, picked: Readonly<Record<Seat, CatalogEntry>>, settings: ArenaState['settings']): Promise<void> {
+  const series = state.series;
+  if (!series || series.id !== seriesId || !series.summary) return;
+  const eligibility = matchEligibility(picked.left, picked.right, settings);
+  if (!eligibility.rated) {
+    series.rating = { state: 'friendly', reason: eligibility.reason };
+    return;
+  }
+  const body = buildMatchReport({
+    left: picked.left.sha256,
+    right: picked.right.sha256,
+    settings,
+    games: series.games.map((g, i) => ({ result: g.result, moves: series.moves[i] ?? [] })),
+  });
+  if (!body) {
+    series.rating = { state: 'friendly', reason: 'A game ended without a board result, so there is nothing to rate.' };
+    return;
+  }
+  series.rating = { state: 'reporting' };
+  let outcome: ReportOutcome;
+  try {
+    outcome = await postMatchReport(body, await turnstileToken('match'), matchesUrl());
+  } catch (err) {
+    outcome = { state: 'failed', reasons: [err instanceof Error ? err.message : String(err)] };
+  }
+  if (state.series?.id === seriesId) state.series.rating = outcome;
 }
 
 function disposeController(): void {

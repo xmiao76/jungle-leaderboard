@@ -128,7 +128,15 @@ export async function loadOpponent(): Promise<MatchEntrant> {
   }
 }
 
-export function playMatch(label: string, red: MatchEntrant, blue: MatchEntrant, entrantSide: Side, entrantSha: string): Promise<MatchSummary> {
+/** Play one game headless to its end; `onPly` hears the running ply count. */
+export function playMatch(
+  label: string,
+  red: MatchEntrant,
+  blue: MatchEntrant,
+  entrantSide: Side,
+  entrantSha: string,
+  onPly: (plies: number) => void = () => undefined,
+): Promise<MatchSummary> {
   return new Promise((resolve) => {
     let plies = 0;
     let settledBothPanes = 0;
@@ -162,6 +170,7 @@ export function playMatch(label: string, red: MatchEntrant, blue: MatchEntrant, 
         },
         committed: () => {
           plies += 1;
+          onPly(plies);
         },
         ended: (result) => {
           const entrantSeat = entrantSide === 'red' ? 'left' : 'right';

@@ -24,6 +24,9 @@
     "conformance": "node --import tsx scripts/conformance.ts",
     "db:migrate": "node --import tsx scripts/db-migrate.ts",
     "db:seed": "node --import tsx scripts/db-seed.ts",
+    "ratings:recompute": "node --import tsx scripts/ratings-recompute.ts",
+    "program:remove": "node --import tsx scripts/program-remove.ts",
+    "matches:audit": "node --import tsx scripts/matches-audit.ts",
     "cf-typegen": "wrangler types",
     "deploy": "node scripts/check-deploy-config.mjs && npm test && npm run build && wrangler d1 migrations apply jungle-arena --remote && wrangler pages deploy dist --project-name jungle-leaderboard --branch main --commit-dirty=true",
     "astro": "astro"

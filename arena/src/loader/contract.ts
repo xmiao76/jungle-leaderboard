@@ -12,6 +12,30 @@ export const WORLD = 'jungle:arena/competitor@1.0.0';
 /** Generated from wit/jungle.wit by contract.test.ts; see that test to regenerate. */
 export const CANONICAL_CONTRACT: ContractShape = canonical;
 
+/**
+ * The one designed exception to exact matching: metadata gained an optional `model-platform`
+ * field, and binaries built before it (the 9-field record below) stay admissible — their
+ * platform normalizes to '' in checkMetadata. Both members must match the legacy pair
+ * together; a mixed old/new record is still rejected like any other type change.
+ */
+const LEGACY_METADATA = 'title:string,game-version:string,model:string,code-agent:string,github-url:string,engine-version:string,runtime:string,rules-id:string,rules-digest:string';
+export const LEGACY_METADATA_SIGNATURES: Readonly<Record<string, string>> = {
+  info: `func() -> record{${LEGACY_METADATA}}`,
+  'type:metadata': `record{${LEGACY_METADATA}}`,
+};
+
+/** Rewrite a legacy metadata pair to the canonical signatures, leaving every other shape untouched. */
+function withLegacyMetadata(actual: ContractShape, expected: ContractShape): ContractShape {
+  const game = actual.exports[GAME_INTERFACE];
+  const canonicalGame = expected.exports[GAME_INTERFACE];
+  if (!game || !canonicalGame) return actual;
+  const isLegacy = Object.entries(LEGACY_METADATA_SIGNATURES).every(([key, signature]) => game[key] === signature);
+  if (!isLegacy) return actual;
+  const rewritten: Record<string, string> = { ...game };
+  for (const key of Object.keys(LEGACY_METADATA_SIGNATURES)) rewritten[key] = canonicalGame[key]!;
+  return { ...actual, exports: { ...actual.exports, [GAME_INTERFACE]: rewritten } };
+}
+
 /** Members are functions by name, or types as `type:name`. */
 function member(key: string): string {
   if (key.startsWith('type:')) return `type "${key.slice(5)}"`;
@@ -35,7 +59,8 @@ function compareInterface(kind: 'import' | 'export', name: string, actual: Inter
 }
 
 /** Every way `actual` departs from the contract; an empty list means it conforms. */
-export function contractIssues(actual: ContractShape, expected: ContractShape = CANONICAL_CONTRACT): string[] {
+export function contractIssues(shape: ContractShape, expected: ContractShape = CANONICAL_CONTRACT): string[] {
+  const actual = withLegacyMetadata(shape, expected);
   const issues: string[] = [];
 
   for (const name of Object.keys(actual.imports)) {

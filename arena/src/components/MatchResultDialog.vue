@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
-import { startMatch, state, swapAndRematch } from '../app/arena';
+import { startMatch, state, swapAndRematch, type RatingView } from '../app/arena';
 import { arenaUrl } from '../app/paths';
 import { formatPoints, seriesRecord } from '../match/series';
 import type { Seat } from '../protocol/messages';
 import { BTN, LABEL, SIDE_DOT } from '../ui/classes';
-import { describeTally, formatRecord, gameOutcome, programNames, seatLabel, seriesHeadline, sideLabel } from '../ui/labels';
+import { authorshipLine, describeTally, formatRatingChange, formatRecord, gameOutcome, programNames, seatLabel, seriesHeadline, sideLabel } from '../ui/labels';
 
 /**
  * The two-game match result, over the boards: each program's points and its wins, losses and
@@ -42,6 +42,32 @@ const names = computed(() => (state.matchEntrants ? programNames(state.matchEntr
 const record = computed(() => seriesRecord(games.value));
 const headline = computed(() => (summary.value ? seriesHeadline(summary.value, names.value) : ''));
 const tally = computed(() => describeTally(record.value, names.value));
+
+// Whether the match changed Elo ratings (reported after game 2; see reportMatch in app/arena.ts).
+const RATING_TONE: Readonly<Record<RatingView['state'], string>> = {
+  reporting: 'border-line bg-inset text-muted',
+  counted: 'border-accent-line bg-accent-soft text-fg',
+  already: 'border-accent-line bg-accent-soft text-fg',
+  unrated: 'border-line-strong bg-raised text-muted',
+  friendly: 'border-line-strong bg-raised text-muted',
+  failed: 'border-bronze-line bg-bronze-soft text-fg',
+};
+const rating = computed(() => series.value?.rating ?? null);
+const ratingText = computed(() => {
+  const r = rating.value;
+  if (!r) return '';
+  if (r.state === 'reporting') return 'Rated match: recording the result and updating both Elo ratings…';
+  if (r.state === 'counted') return 'Rated match: both Elo ratings were updated.';
+  if (r.state === 'already') return 'Rated match: this result was already recorded.';
+  if (r.state === 'unrated') return `Recorded, but unrated. ${r.reason}`;
+  if (r.state === 'friendly') return `Friendly match: ratings are unchanged. ${r.reason}`;
+  return `The rated result could not be recorded. ${r.reasons.join(' ')}`;
+});
+/** "Elo 1000 → 1016 (+16)" for a seat, once the rated result is recorded. */
+function ratingChange(seat: Seat): string | null {
+  const r = rating.value;
+  return r?.state === 'counted' ? `Elo ${formatRatingChange(r.ratings[seat])}` : null;
+}
 
 function outcome(seat: Seat): Outcome {
   const s = summary.value;
@@ -86,6 +112,9 @@ onMounted(() => {
         {{ tally }}
         <template v-if="!summary.complete"> A game ended without a board result, so the match has no winner.</template>
       </p>
+      <p v-if="rating" :class="['mt-3 rounded-lg border px-3 py-2 text-sm', RATING_TONE[rating.state]]" role="status" data-testid="match-rating" :data-state="rating.state">
+        {{ ratingText }}
+      </p>
 
       <div class="mt-5 grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr]">
         <template v-for="(seat, i) in SEATS" :key="seat">
@@ -108,7 +137,7 @@ onMounted(() => {
             <p class="mt-2 font-display text-lg leading-snug font-semibold break-words">{{ state.matchEntrants?.[seat].metadata.title ?? names[seat] }}</p>
             <p class="text-sm">
               <span class="font-semibold">v{{ state.matchEntrants?.[seat].metadata.gameVersion }}</span>
-              <span class="text-muted"> · {{ state.matchEntrants?.[seat].metadata.model }} · {{ state.matchEntrants?.[seat].metadata.codeAgent }}</span>
+              <span v-if="state.matchEntrants?.[seat]" class="text-muted"> · {{ authorshipLine(state.matchEntrants[seat].metadata) }}</span>
             </p>
             <!-- Anchored to the card's foot, so both cards' scores line up even when a title wraps. -->
             <p class="mt-auto flex items-baseline gap-2 pt-3">
@@ -129,6 +158,7 @@ onMounted(() => {
                 <dd class="tabular font-display text-2xl font-semibold">{{ record[seat].draws }}</dd>
               </div>
             </dl>
+            <p v-if="ratingChange(seat)" class="tabular mt-3 text-center text-sm font-semibold" :data-testid="`match-rating-${seat}`">{{ ratingChange(seat) }}</p>
           </section>
         </template>
       </div>

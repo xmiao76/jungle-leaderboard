@@ -236,11 +236,12 @@ pub fn render_snapshot(snapshot: &[u8], flipped: bool, progress: u16) -> Vec<u8>
 #[wasm_bindgen]
 pub fn identity_json() -> String {
     format!(
-        "{{\"title\":\"{}\",\"gameVersion\":\"{}\",\"model\":\"{}\",\"codeAgent\":\"{}\",\"githubUrl\":\"{}\",\"engineVersion\":\"{}\",\"runtime\":\"{}\",\"rulesId\":\"{}\",\"rulesDigest\":\"{}\"}}",
+        "{{\"title\":\"{}\",\"gameVersion\":\"{}\",\"model\":\"{}\",\"codeAgent\":\"{}\",\"modelPlatform\":\"{}\",\"githubUrl\":\"{}\",\"engineVersion\":\"{}\",\"runtime\":\"{}\",\"rulesId\":\"{}\",\"rulesDigest\":\"{}\"}}",
         identity::TITLE,
         identity::GAME_VERSION,
         identity::MODEL,
         identity::CODE_AGENT,
+        identity::MODEL_PLATFORM,
         identity::GITHUB_URL,
         identity::ENGINE_VERSION,
         identity::RUNTIME,

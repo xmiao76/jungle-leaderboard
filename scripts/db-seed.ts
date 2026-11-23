@@ -35,7 +35,11 @@ export function readSeed(): { entries: readonly PublicEntry[]; paths: ReadonlyMa
 export async function seedCatalog(target: Target): Promise<number> {
   const { entries, paths } = readSeed();
   // Build (and so validate) the SQL before touching storage: a bad seed uploads nothing.
-  const sql = seedSql(entries);
+  return loadEntries(target, entries, paths, seedSql(entries));
+}
+
+/** Put each entry's bytes in R2, then run `sql` (already validated) against D1. */
+export async function loadEntries(target: Target, entries: readonly PublicEntry[], paths: ReadonlyMap<string, string>, sql: string): Promise<number> {
   for (const entry of entries) {
     const object = `${BUCKET_NAME}/${binaryKey(entry.sha256)}`;
     await runWrangler(['r2', 'object', 'put', object, '--file', paths.get(entry.sha256)!, '--content-type', 'application/wasm', ...targetArgs(target)]);

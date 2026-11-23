@@ -23,6 +23,10 @@ export const uploadUrl = (): string => new URL('upload/', appRoot()).href;
 export const leaderboardUrl = (): string => new URL('../', appRoot()).href;
 /** The catalog API (functions/api/catalog/), a sibling of the Arena at the site root. */
 export const catalogBase = (): URL => new URL('../api/catalog/', appRoot());
+/** POST target for publishing an upload (functions/api/catalog/index.ts). */
+export const catalogUploadUrl = (): URL => new URL('../api/catalog', appRoot());
+/** POST target for a finished match's result (functions/api/matches/index.ts). */
+export const matchesUrl = (): URL => new URL('../api/matches', appRoot());
 export const sdkUrl = (file: string): string => new URL(`sdk/${file}`, appRoot()).href;
 
 // ---- The play page (/arena/play/) -------------------------------------------------------

@@ -30,6 +30,7 @@ interface Release {
   gameVersion: string;
   model: string;
   codeAgent: string;
+  modelPlatform: string;
   githubUrl: string;
   engineVersion: string;
   runtime: string;
@@ -84,7 +85,7 @@ function startWorker(): Promise<Worker> {
 }
 
 async function loadRelease(): Promise<Release> {
-  const fallback = { ...JSON.parse(identity_json()), file: 'jungle-opus55-1.1.0.wasm', sha256: '', size: 0 } as Release;
+  const fallback = { ...JSON.parse(identity_json()), file: 'jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm', sha256: '', size: 0 } as Release;
   try {
     const response = await fetch('release/release.json', { cache: 'no-cache' });
     return response.ok ? ((await response.json()) as Release) : fallback;
@@ -282,6 +283,7 @@ function identityRows(r: Release): string {
     ['Title', `${r.title} v${r.gameVersion}`],
     ['Model', r.model],
     ['Code agent', r.codeAgent],
+    ...(r.modelPlatform ? [['Model platform', r.modelPlatform] as [string, string]] : []),
     ['Engine', r.engineVersion],
     ['Runtime', r.runtime],
     ['Rules', `${r.rulesId} · ${r.rulesDigest.slice(0, 16)}…`],
@@ -321,7 +323,7 @@ function readMenu(form: HTMLFormElement): Config {
 }
 
 function renderRelease(r: Release): void {
-  $('byline').textContent = `${r.model} · ${r.codeAgent} · engine ${r.engineVersion.split(' ')[1] ?? r.gameVersion} · v${r.gameVersion}`;
+  $('byline').textContent = `${[r.model, r.codeAgent, r.modelPlatform || null].filter(Boolean).join(' · ')} · engine ${r.engineVersion.split(' ')[1] ?? r.gameVersion} · v${r.gameVersion}`;
   $('identity').innerHTML = identityRows(r);
   $('release').innerHTML = `
     <p><a class="btn primary" href="${r.file}" download="${r.file}" data-testid="download">Download Arena .wasm</a>

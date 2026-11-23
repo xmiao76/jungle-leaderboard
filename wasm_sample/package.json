@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Standalone Jungle (Dou Shou Qi) web game whose release build also emits a single-file Arena entrant (jungle-opus55-1.1.0.wasm).",
+  "description": "Standalone Jungle (Dou Shou Qi) web game whose release build also emits a single-file Arena entrant (jungle-claude-opus-5-5-claudecode-official-1.1.0.wasm).",
   "engines": {
     "node": ">=22.12.0"
   },

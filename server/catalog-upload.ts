@@ -19,11 +19,15 @@
  * exact bytes are already listed, and `{ stage: 'server', reasons: [...] }` with a 4xx/5xx
  * status for every rejection.
  */
+import { UPLOAD_HEADERS } from '../arena/src/catalog/upload-protocol';
 import { MAX_UPLOAD_BYTES } from '../arena/src/loader/limits';
 import { checkMetadata } from '../arena/src/loader/metadata';
 import { isComponentBinary } from '../arena/src/loader/strip';
 import type { Metadata } from '../arena/src/referee/types';
+import { consumeQuota, dailyLimit, hashUploader, quotaBucket, verifyTurnstile } from './abuse';
 import { LISTED_COLUMNS, binaryKey, rowToPublicEntry, type EntrantStatus, type ListedRow } from './entrant-row';
+
+export { hashUploader, quotaBucket, UPLOAD_HEADERS };
 
 /** The runtime bindings plus the two upload secrets (set with `wrangler pages secret put`;
  * locally they come from `.dev.vars` — see `.dev.vars.example`). Not part of the generated
@@ -31,6 +35,8 @@ import { LISTED_COLUMNS, binaryKey, rowToPublicEntry, type EntrantStatus, type L
 export interface CatalogUploadEnv extends Env {
   readonly TURNSTILE_SECRET?: string;
   readonly UPLOADER_SALT?: string;
+  /** Optional override of MAX_UPLOADS_PER_DAY (e2e raises it). */
+  readonly UPLOAD_DAILY_LIMIT?: string;
 }
 
 export interface CatalogUploadDeps {
@@ -48,32 +54,21 @@ export interface CatalogUploadDeps {
   };
 }
 
-export const UPLOAD_HEADERS = {
-  sha256: 'X-Entrant-Sha256',
-  report: 'X-Entrant-Report',
-  turnstileToken: 'X-Turnstile-Token',
-} as const;
-
 /** Upload attempts one uploader may make per UTC day. An attempt that passes Turnstile
  * counts, published or not: the quota is a brake on abuse, not a publication allowance. */
 export const MAX_UPLOADS_PER_DAY = 20;
 
-const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 /** Far above a real round report; bounds what a hostile header can make the worker parse. */
 const MAX_REPORT_HEADER_CHARS = 65_536;
 const HEADER_BYTES = 8;
 
 const INSERT_ENTRANT = [
-  'INSERT INTO entrants (sha256, size, title, game_version, model, code_agent, github_url, engine_version, runtime,',
+  'INSERT INTO entrants (sha256, size, title, game_version, model, code_agent, model_platform, github_url, engine_version, runtime,',
   '  rules_id, rules_digest, provenance, credits, report, uploader, created_at)',
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 ].join('\n');
 const SELECT_BY_SHA = `SELECT ${LISTED_COLUMNS}, status FROM entrants WHERE sha256 = ?`;
-const CONSUME_QUOTA = [
-  'INSERT INTO upload_quota (bucket, count) VALUES (?, 1)',
-  'ON CONFLICT (bucket) DO UPDATE SET count = count + 1 WHERE upload_quota.count < ?',
-].join('\n');
 
 type StoredRow = ListedRow & { readonly status: EntrantStatus };
 
@@ -83,39 +78,6 @@ function rejection(status: number, reasons: readonly string[]): Response {
 
 function unavailable(reason: string): Response {
   return rejection(503, [reason]);
-}
-
-/** The uploader identity used for quotas and abuse review: a salted hash, never the address. */
-export async function hashUploader(salt: string, address: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${salt}|${address}`));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-/** Quota bucket for one uploader on one UTC day. */
-export function quotaBucket(uploader: string, date: Date): string {
-  return `${uploader}|${date.toISOString().slice(0, 10)}`;
-}
-
-type TurnstileResult = 'ok' | 'failed' | 'unavailable';
-
-async function verifyTurnstile(fetcher: typeof fetch, secret: string, token: string, address: string): Promise<TurnstileResult> {
-  try {
-    const response = await fetcher(SITEVERIFY_URL, {
-      method: 'POST',
-      body: new URLSearchParams({ secret, response: token, ...(address ? { remoteip: address } : {}) }),
-    });
-    if (!response.ok) return 'unavailable';
-    const outcome = (await response.json()) as { success?: unknown };
-    return outcome.success === true ? 'ok' : 'failed';
-  } catch {
-    return 'unavailable';
-  }
-}
-
-/** Atomically take one daily attempt; false when the day's allowance is already used up. */
-async function consumeQuota(db: D1Database, bucket: string): Promise<boolean> {
-  const result = await db.prepare(CONSUME_QUOTA).bind(bucket, MAX_UPLOADS_PER_DAY).run();
-  return result.meta.changes > 0;
 }
 
 /** Read just enough of the body to see the component preamble; the reader stays open. */
@@ -216,8 +178,9 @@ export async function handleCatalogUpload(
 
     // 2. Quota.
     const uploader = await hashUploader(env.UPLOADER_SALT, address);
-    if (!(await consumeQuota(env.DB, quotaBucket(uploader, now())))) {
-      return rejection(429, [`The daily limit of ${MAX_UPLOADS_PER_DAY} uploads is used up; try again tomorrow.`]);
+    const limit = dailyLimit(env.UPLOAD_DAILY_LIMIT, MAX_UPLOADS_PER_DAY);
+    if (!(await consumeQuota(env.DB, 'upload_quota', quotaBucket(uploader, now()), limit))) {
+      return rejection(429, [`The daily limit of ${limit} uploads is used up; try again tomorrow.`]);
     }
 
     // 3. Size (and content type), from headers alone; the body is streamed, never buffered.
@@ -288,7 +251,7 @@ export async function handleCatalogUpload(
     try {
       await env.DB.prepare(INSERT_ENTRANT)
         .bind(
-          sha256, size, metadata.title, metadata.gameVersion, metadata.model, metadata.codeAgent,
+          sha256, size, metadata.title, metadata.gameVersion, metadata.model, metadata.codeAgent, metadata.modelPlatform,
           metadata.githubUrl, metadata.engineVersion, metadata.runtime, metadata.rulesId, metadata.rulesDigest,
           null, null, decoded.reportJson, uploader, createdAt,
         )
@@ -304,7 +267,7 @@ export async function handleCatalogUpload(
     const entry = rowToPublicEntry({
       sha256, size,
       title: metadata.title, game_version: metadata.gameVersion, model: metadata.model,
-      code_agent: metadata.codeAgent, github_url: metadata.githubUrl,
+      code_agent: metadata.codeAgent, model_platform: metadata.modelPlatform, github_url: metadata.githubUrl,
       engine_version: metadata.engineVersion, runtime: metadata.runtime,
       rules_id: metadata.rulesId, rules_digest: metadata.rulesDigest,
       provenance: null, credits: null, is_reference: 0, created_at: createdAt,

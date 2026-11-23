@@ -44,6 +44,20 @@ export function checkMetadata(raw: unknown): MetadataCheck {
     clean[field] = text.slice(0, MAX_METADATA_CHARS);
   }
 
+  // modelPlatform is optional: binaries built before the field existed have no such property,
+  // which normalizes to '' here (and is displayed as nothing), never to an invented value.
+  const platform = record['modelPlatform'];
+  if (platform === undefined) {
+    clean['modelPlatform'] = '';
+  } else if (typeof platform !== 'string') {
+    issues.push('info().modelPlatform is not a string.');
+    clean['modelPlatform'] = '';
+  } else {
+    const text = sanitizeText(platform);
+    if (text.length > MAX_METADATA_CHARS) issues.push(`info().modelPlatform is longer than ${MAX_METADATA_CHARS} characters.`);
+    clean['modelPlatform'] = text.slice(0, MAX_METADATA_CHARS);
+  }
+
   // Identity is compared on the raw strings: "desktop-jungle-v2\0" is not the rules ID.
   const rulesCompatible = record['rulesId'] === RULES_ID && record['rulesDigest'] === RULES_DIGEST;
   if (record['rulesId'] !== RULES_ID) {

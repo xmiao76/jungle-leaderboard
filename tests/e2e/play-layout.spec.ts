@@ -1,6 +1,7 @@
 // The play page gives the screen to the two game boards: no scrolling, boards side by side
 // (stacked on portrait screens), everything else in one bar or in overlays.
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { setUpTestVsSample, startMatch } from './arena';
 
 interface Box {

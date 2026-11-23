@@ -1,19 +1,12 @@
 ---
 import { SITE } from '../data/site';
-import { formatSnapshotDate } from '../lib/format';
-
-interface Props {
-  isoDate: string;
-}
-
-const { isoDate } = Astro.props;
 
 const LINK = 'text-muted underline decoration-line-strong underline-offset-2 hover:text-accent';
 ---
 
 <footer class="mt-16 border-t border-line-strong py-9 text-xs leading-relaxed text-subtle sm:mt-20">
   <p>
-    Benchmark designed and run by
+    Leaderboard and Arena by
     <a href={SITE.authorUrl} target="_blank" rel="noopener noreferrer" class={LINK}>
       {SITE.author}
     </a>. Source for this page:
@@ -23,7 +16,7 @@ const LINK = 'text-muted underline decoration-line-strong underline-offset-2 hov
   </p>
 
   <p class="mt-2">
-    Last updated <time datetime={isoDate}>{formatSnapshotDate(isoDate)}</time>. Model and product
-    names are the trademarks of their respective owners.
+    Ratings update as rated matches are reported from the Arena. Model and product names are the
+    trademarks of their respective owners.
   </p>
 </footer>

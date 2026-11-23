@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { pause, play, setMuted, SPEEDS, startMatch, state, step, swapAndRematch, type Speed } from '../app/arena';
+import { matchEligibility, pause, play, setMuted, SPEEDS, startMatch, state, step, swapAndRematch, type Speed } from '../app/arena';
 import { arenaUrl } from '../app/paths';
 import { SIDE_CHIP } from '../ui/classes';
 import { describeResult, moveNumber, PHASE_LABEL, seatLabel, sideLabel } from '../ui/labels';
@@ -37,6 +37,11 @@ const seriesLabel = computed(() => {
   return `Game ${s.game} of 2`;
 });
 const speeds = Object.keys(SPEEDS) as Speed[];
+const eligibility = computed(() => matchEligibility(state.matchEntrants?.left ?? null, state.matchEntrants?.right ?? null, state.settings));
+const RATED_BADGE = {
+  rated: 'inline-flex items-center rounded-full border border-accent-line bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent',
+  friendly: 'inline-flex items-center rounded-full border border-line-strong px-2.5 py-0.5 text-xs font-semibold text-muted',
+} as const;
 
 const BUTTON =
   'inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-line-strong bg-raised px-2.5 text-xs font-semibold text-fg transition hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-45';
@@ -53,6 +58,13 @@ const STAT = 'shrink-0 whitespace-nowrap';
       <span v-if="seriesLabel" :class="[STAT, 'rounded-full border border-accent-line px-2 py-px font-semibold text-accent']" data-testid="series-game" :data-game="series?.game">{{
         seriesLabel
       }}</span>
+      <span
+        v-if="state.matchEntrants"
+        :class="[RATED_BADGE[eligibility.rated ? 'rated' : 'friendly'], 'shrink-0']"
+        :title="eligibility.rated ? 'Both programs’ Elo ratings change after this match.' : eligibility.reason"
+        data-testid="play-rated"
+        >{{ eligibility.rated ? 'Rated' : 'Friendly' }}</span
+      >
       <span :class="[STAT, 'font-semibold']" data-testid="phase">{{ phase ? PHASE_LABEL[phase] : 'Starting' }}</span>
       <span :class="STAT">Move <span class="tabular font-semibold" data-testid="move-number">{{ moveNumber(snapshot) }}</span></span>
       <span :class="[STAT, 'text-subtle']">rev <span class="tabular" data-testid="rev">{{ snapshot?.rev ?? '—' }}</span></span>

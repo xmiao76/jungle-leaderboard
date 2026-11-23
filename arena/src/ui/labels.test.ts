@@ -2,9 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { applyMove, initialSnapshot, legalMoves } from '../referee';
 import type { MatchResult } from '../match/controller';
 import type { SeriesGame } from '../match/series';
-import { describeResult, describeTally, formatRecord, gameOutcome, moveNumber, programNames, seatLabel, seriesHeadline, shortHash, sideLabel, squareName } from './labels';
+import { authorshipLine, describeResult, describeTally, formatRatingChange, formatRecord, gameOutcome, moveNumber, programNames, seatLabel, seriesHeadline, shortHash, sideLabel, squareName } from './labels';
 
 describe('labels', () => {
+  it('joins model, code agent and a declared platform; omits an empty or absent one', () => {
+    expect(authorshipLine({ model: 'M', codeAgent: 'A', modelPlatform: 'official' })).toBe('M · A · official');
+    expect(authorshipLine({ model: 'M', codeAgent: 'A', modelPlatform: '' })).toBe('M · A');
+    // Metadata persisted before the field existed has no such property at runtime.
+    expect(authorshipLine({ model: 'M', codeAgent: 'A' } as never)).toBe('M · A');
+  });
+
   it('names seats, sides and hashes', () => {
     expect(seatLabel('left')).toBe('Left seat');
     expect(sideLabel('blue')).toBe('Blue');
@@ -62,6 +69,12 @@ describe('match result labels', () => {
     expect(describeTally({ left: { wins: 0, losses: 0, draws: 2 }, right: { wins: 0, losses: 0, draws: 2 } }, names)).toBe(
       'Alpha v2.0.0 won 0 games, Alpha v1.0.0 won 0 games, 2 games were drawn.',
     );
+  });
+
+  it('shows a rating change rounded, with its sign', () => {
+    expect(formatRatingChange({ before: 1000, after: 1016.4 })).toBe('1000 → 1016 (+16)');
+    expect(formatRatingChange({ before: 1031.6, after: 1000.2 })).toBe('1032 → 1000 (−31)');
+    expect(formatRatingChange({ before: 1000, after: 1000.2 })).toBe('1000 → 1000 (±0)');
   });
 
   it('heads the result with the winner, a drawn match, or no result', () => {
